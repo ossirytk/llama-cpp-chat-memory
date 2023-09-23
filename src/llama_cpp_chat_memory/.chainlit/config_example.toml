@@ -1,0 +1,21 @@
+[project]
+enable_telemetry = false
+user_env = []
+session_timeout = 3600
+cache = false
+
+[features]
+prompt_playground = true
+
+[UI]
+name = "Assistant"
+default_collapse_content = true
+default_expand_messages = false
+hide_cot = false
+
+[meta]
+generated_by = "0.7.0"
+
+[UI.theme.light.primary]
+
+[UI.theme.dark.primary]

@@ -1,0 +1,17 @@
+[[source]]
+url = "https://pypi.org/simple"
+verify_ssl = true
+name = "pypi"
+
+[packages]
+langchain = "==0.0.300"
+chainlit = "==0.7.0"
+pillow = "==10.0.0"
+pyyaml = "==6.0.1"
+llama-cpp-python = "==0.2.6"
+toml = "==0.10.2"
+
+[dev-packages]
+
+[requires]
+python_version = "3.11"

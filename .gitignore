@@ -1,0 +1,9 @@
+.vscode
+.env
+dist/
+src/llama_cpp_chat_memory/__pycache__/
+src/llama_cpp_chat_memory/.chainlit/.langchain.db
+src/llama_cpp_chat_memory/.chainlit/config.toml
+src/llama_cpp_chat_memory/temp/
+src/llama_cpp_chat_memory/test.py
+src/llama_cpp_chat_memory/chainlit.md

@@ -1,0 +1,6 @@
+langchain==0.0.300
+chainlit==0.7.0
+Pillow==10.0.0
+PyYAML==6.0.1
+toml==0.10.2
+llama-cpp-python==0.2.6
