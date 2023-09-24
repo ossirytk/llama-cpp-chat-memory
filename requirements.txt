@@ -1,6 +1,7 @@
-langchain==0.0.300
-chainlit==0.7.0
-Pillow==10.0.0
+langchain==0.0.330
+chainlit==0.7.400
+Pillow==10.0.1
 PyYAML==6.0.1
 toml==0.10.2
-llama-cpp-python==0.2.6
+chromadb==0.4.14
+llama-cpp-python==0.2.11

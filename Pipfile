@@ -4,11 +4,12 @@ verify_ssl = true
 name = "pypi"
 
 [packages]
-langchain = "==0.0.300"
-chainlit = "==0.7.0"
-pillow = "==10.0.0"
+langchain = "==0.0.330"
+chainlit = "==0.7.400"
+pillow = "==10.0.1"
 pyyaml = "==6.0.1"
-llama-cpp-python = "==0.2.6"
+chromadb="==0.4.14"
+llama-cpp-python = "==0.2.11"
 toml = "==0.10.2"
 
 [dev-packages]

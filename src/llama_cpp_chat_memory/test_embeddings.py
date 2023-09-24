@@ -1,6 +1,6 @@
 from langchain.prompts import PromptTemplate
-from langchain.llms import LlamaCpp
 from langchain.vectorstores import Chroma
+from chromadb.config import Settings
 from langchain.embeddings import LlamaCppEmbeddings
 from os import getenv, mkdir
 from os.path import exists, join, splitext, realpath, dirname
@@ -12,7 +12,7 @@ import fnmatch
 import base64
 import toml
 import chromadb
-from chromadb.config import Settings
+import argparse
 
 load_dotenv(find_dotenv())
 CARD_AVATAR = None
@@ -106,7 +106,7 @@ def parse_prompt():
     with open(config_toml_path, "w") as toml_file:
         toml.dump(toml_dict, toml_file)
 
-    if getenv("MODEL_TYPE") == "alpaca":
+    if getenv("MODEL_TYPE") == "llama":
         llama_instruction ="### Instruction:"
         llama_input = "### Input:"
         llama_response ="### Response:"
@@ -147,62 +147,76 @@ def parse_prompt():
         w.write(first_message)
     return prompt.partial(character = char_name,description = description, scenario = scenario, mes_example = mes_example, llama_input = llama_input, llama_instruction= llama_instruction, llama_response = llama_response, vector_context =" ") 
 
-def get_avatar_image():
-    if CARD_AVATAR is None:
-        prompt_dir = getenv("CHARACTER_CARD_DIR")
-        prompt_name = getenv("CHARACTER_CARD")
-        prompt_source =join(prompt_dir, prompt_name)
-        base = splitext(prompt_source)[0]
-        if exists(base + ".png"):
-            return base + ".png"
-        elif exists(base + ".jpg"):
-            return base + ".jpg"
-        return ""
-    else:
-        return CARD_AVATAR
-
-def instantiate_retriever():
-    model_dir = getenv("MODEL_DIR")
-    model = getenv("MODEL")
-    model_source =join(model_dir, model) 
-
-    client = chromadb.PersistentClient(path=getenv("PERSIST_DIRECTORY"),settings= Settings(anonymized_telemetry=False))
-    embedding_params = {
-        "n_ctx": getenv("N_CTX"),
-        "n_batch": 1024,
-        "n_gpu_layers": getenv("LAYERS"),
-    }
-
-    llama_embeddings = LlamaCppEmbeddings(model_path=model_source,
-        **embedding_params,)
-    db = Chroma(client=client, collection_name=getenv("COLLECTION"), persist_directory =getenv("PERSIST_DIRECTORY") , embedding_function=llama_embeddings)
-
-    return db
-
-def instantiate_llm():
+def main(
+    query,
+    k,
+    collection_name,
+    persist_directory,) -> None:
     model_dir = getenv("MODEL_DIR")
     model = getenv("MODEL")
     model_source =join(model_dir, model) 
 
     params = {
         "n_ctx": getenv("N_CTX"),
-        "temperature": 0.6,
-        "last_n_tokens_size": 256,
         "n_batch": 1024,
-        "repeat_penalty": 1.17647,
         "n_gpu_layers": getenv("LAYERS"),
-        "rope_freq_scale": getenv("ROPE_CONTEXT"),
     }
-    
-    llm_model_init = LlamaCpp(
-        model_path=model_source,
-        streaming=True,
-        **params,
-    )
-    return llm_model_init
 
-PROMPT = parse_prompt()
-AVATAR_IMAGE = get_avatar_image()
-USE_AVATAR_IMAGE = exists(AVATAR_IMAGE)
-RETRIEVER = instantiate_retriever()
-LLM_MODEL = instantiate_llm()
+    llama = LlamaCppEmbeddings(model_path=model_source,
+        **params,)
+    client = chromadb.PersistentClient(path=persist_directory,settings= Settings(anonymized_telemetry=False))
+    db = Chroma(client=client,collection_name=collection_name, persist_directory =persist_directory , embedding_function=llama)
+    print("There are", db._collection.count(), " documents in the collection")
+    print("--------------------------------------------------------------------")
+    # query it
+    docs = db.similarity_search_with_score(query=query, k=k)
+
+    vector_context = ""
+    for answer in docs:
+        print("--------------------------------------------------------------------")
+        print(f"distance: {answer[1]}")
+        print(answer[0].metadata)
+        print(answer[0].page_content)
+        vector_context = vector_context + answer[0].page_content
+    print("--------------------------------------------------------------------")
+    print(vector_context)
+    
+if __name__ == "__main__":
+    # Read the data directory, collection name, and persist directory
+    parser = argparse.ArgumentParser(description="Load documents from a directory into a Chroma collection")
+
+    # Add arguments
+    parser.add_argument(
+        "--query",
+        type=str,
+        default="Who is John Connor?",
+        help="Query to the vector storage",
+    )
+    parser.add_argument(
+        "--k",
+        type=int,
+        default=2,
+        help="The nuber of documents to fetch",
+    )
+    parser.add_argument(
+        "--collection_name",
+        type=str,
+        default="skynet",
+        help="The name of the Chroma collection",
+    )
+    parser.add_argument(
+        "--persist_directory",
+        type=str,
+        default="./character_storage/",
+        help="The directory where you want to store the Chroma collection",
+    )
+
+    # Parse arguments
+    args = parser.parse_args()
+
+    main(
+        query = args.query,
+        k=args.k,
+        collection_name=args.collection_name,
+        persist_directory=args.persist_directory,
+    )
