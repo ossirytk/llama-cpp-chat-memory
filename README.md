@@ -5,7 +5,7 @@ Llamacpp chat with langchain and chainlit using vector stores as memory. This pr
 Supports alpaca text prompts, v2 and tavern style json and yaml files and V2 and tavern png cards. Avatar images need to be in the same folder as the prompt file. V2 and Tavern png files get a copy of the image without exif data in the project temp file.
 
 ### Card Format
-See [character editor](https://zoltanai.github.io/character-editor/).
+See [character editor](https://zoltanai.github.io/character-editor/).<BR>
 'name' : 'char_name'<br>
 The name for the ai character. When using json or yaml, this is expected to correspond to avatar image. name.png or name.jpg.<br>
 'description' : 'char_persona'<br>
