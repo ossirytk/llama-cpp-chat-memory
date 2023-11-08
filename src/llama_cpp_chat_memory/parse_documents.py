@@ -1,14 +1,19 @@
-import os
-import glob
-from os import getenv, mkdir
-from os.path import exists, join, splitext, realpath, dirname
-from dotenv import load_dotenv, find_dotenv
 import argparse
-from langchain.text_splitter import RecursiveCharacterTextSplitter
-from langchain.document_loaders import TextLoader
-from langchain.vectorstores import Chroma
-from langchain.embeddings import LlamaCppEmbeddings
+import glob
+import json
+import logging
+import os
+from os import getenv
+from os.path import join
 
+from dotenv import find_dotenv, load_dotenv
+from langchain.docstore.document import Document
+from langchain.document_loaders import TextLoader
+from langchain.embeddings import LlamaCppEmbeddings
+from langchain.text_splitter import RecursiveCharacterTextSplitter
+from langchain.vectorstores import Chroma
+
+logging.basicConfig(format="%(message)s", encoding="utf-8", level=logging.INFO)
 load_dotenv(find_dotenv())
 
 
@@ -26,25 +31,47 @@ def main(
         "n_gpu_layers": getenv("LAYERS"),
     }
 
-    print(documents_directory)
-    print(collection_name)
-    print(persist_directory)
+    logging.info(f"Reading files from: {documents_directory}")
+    logging.info(f"Writing to: {collection_name}")
+    logging.info(f"Saving collection to: {persist_directory}")
 
     documents_pattern = os.path.join(documents_directory, "*.txt")
-    documents_paths = glob.glob(documents_pattern)
+    documents_paths_txt = glob.glob(documents_pattern)
 
-    all_documents = list()
-    for document_path in documents_paths:
-        print(document_path)
-
-        loader = TextLoader(document_path, encoding="utf-8")
+    all_documents = []
+    text_splitter = RecursiveCharacterTextSplitter(chunk_size=1024, chunk_overlap=0)
+    for txt_document in documents_paths_txt:
+        loader = TextLoader(txt_document, encoding="utf-8")
         documents = loader.load()
-
-        text_splitter = RecursiveCharacterTextSplitter(chunk_size=1024, chunk_overlap=512)
         docs = text_splitter.split_documents(documents)
         all_documents.extend(docs)
 
-    # print(all_documents)
+    documents_pattern = os.path.join(documents_directory, "*.json")
+    documents_paths_json = glob.glob(documents_pattern)
+
+    for json_document in documents_paths_json:
+        with open(json_document) as f:
+            content = f.read()
+        document_content = json.loads(content)
+        document_text = ""
+        if isinstance(document_content["entries"], list):
+            for entry in document_content["entries"]:
+                if "content" in entry:
+                    document_text = document_text + entry["content"]
+                elif "entry" in entry:
+                    document_text = document_text + entry["entry"]
+            metadata = {"source": json_document}
+            json_doc = [Document(page_content=document_text, metadata=metadata)]
+            json_document_content = text_splitter.split_documents(json_doc)
+            all_documents.extend(json_document_content)
+        elif isinstance(document_content["entries"], dict):
+            for entry in document_content["entries"]:
+                document_text = document_text + document_content["entries"][entry]["content"]
+            metadata = {"source": json_document}
+            json_doc = [Document(page_content=document_text, metadata=metadata)]
+            json_document_content = text_splitter.split_documents(json_doc)
+            all_documents.extend(json_document_content)
+    # logging.info(all_documents)
     llama = LlamaCppEmbeddings(
         model_path=model_source,
         **params,
@@ -64,19 +91,19 @@ if __name__ == "__main__":
 
     # Add arguments
     parser.add_argument(
-        "--data_directory",
+        "--data-directory",
         type=str,
-        default="./documents/",
+        default="./documents/skynet",
         help="The directory where your text files are stored",
     )
     parser.add_argument(
-        "--collection_name",
+        "--collection-name",
         type=str,
         default="skynet",
         help="The name of the Chroma collection",
     )
     parser.add_argument(
-        "--persist_directory",
+        "--persist-directory",
         type=str,
         default="./character_storage/",
         help="The directory where you want to store the Chroma collection",
