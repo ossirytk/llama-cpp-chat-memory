@@ -1,12 +1,23 @@
+import logging
 import sys
 
-sys.path.append('.')
-sys.path.append('..')
-from llama_cpp_chat_memory import *
+import chainlit as cl
 from langchain.chains import ConversationChain
 from langchain.chains.conversation.memory import ConversationBufferWindowMemory
-import chainlit as cl
-import logging
+
+sys.path.append(".")
+sys.path.append("..")
+from llama_cpp_chat_memory import (
+    AVATAR_IMAGE,
+    CHARACTER_NAME,
+    LLM_MODEL,
+    PROMPT,
+    RETRIEVER,
+    USE_AVATAR_IMAGE,
+    getenv,
+)
+
+logging.basicConfig(format="%(message)s", encoding="utf-8", level=logging.INFO)
 
 
 @cl.author_rename
@@ -17,8 +28,6 @@ def rename(orig_author: str):
 
 @cl.on_chat_start
 async def start():
-    USE_AVATAR_IMAGE
-
     if USE_AVATAR_IMAGE:
         await cl.Avatar(name=CHARACTER_NAME, path=AVATAR_IMAGE, size="large").send()
 
@@ -35,7 +44,7 @@ async def start():
 async def get_answer(message, llm_chain: ConversationChain, callback):
     logging.info(message)
     docs = RETRIEVER.similarity_search_with_score(query=message, k=int(getenv("VECTOR_K")))
-
+    logging.info(f"There are {RETRIEVER._collection.count()} documents in the collection")
     vector_context = ""
     for answer in docs:
         vector_context = vector_context + answer[0].page_content
