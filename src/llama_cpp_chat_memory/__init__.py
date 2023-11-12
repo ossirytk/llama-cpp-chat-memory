@@ -16,7 +16,8 @@ from langchain.prompts import PromptTemplate
 from langchain.vectorstores import Chroma
 from PIL import Image
 
-logging.basicConfig(format="%(message)s", encoding="utf-8", level=logging.INFO)
+logging.basicConfig(format="%(message)s", encoding="utf-8", level=logging.DEBUG)
+# logging.basicConfig(format="%(message)s", encoding="utf-8", level=logging.INFO)
 load_dotenv(find_dotenv())
 CARD_AVATAR = None
 CHARACTER_NAME = getenv("CHARACTER_NAME")
@@ -44,7 +45,22 @@ Current conversation:
 Question: {input}
 
 {llama_response}
-"""
+"""  # noqa: E501
+
+def parse_keys():
+    use_keys = getenv("USE_KEY_STORAGE")
+    collection_name = getenv("COLLECTION")
+    all_keys = None
+    if use_keys:
+        key_storage = getenv("KEY_STORAGE_DIRECTORY")
+        key_storage_path = join(key_storage, collection_name + ".json")
+        if exists(key_storage_path):
+            with open(key_storage_path) as key_file:
+                content = key_file.read()
+            all_keys = json.loads(content)
+            logging.debug(f"Loading filter list from: {key_storage_path}")
+            logging.debug(f"Filter keys: {all_keys}")
+    return all_keys
 
 
 def parse_prompt():
@@ -232,7 +248,7 @@ def instantiate_llm():
     )
     return llm_model_init
 
-
+ALL_KEYS=parse_keys()
 PROMPT = parse_prompt()
 AVATAR_IMAGE = get_avatar_image()
 USE_AVATAR_IMAGE = exists(AVATAR_IMAGE)

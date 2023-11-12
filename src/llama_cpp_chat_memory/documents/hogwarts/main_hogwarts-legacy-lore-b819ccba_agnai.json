@@ -1,0 +1,126 @@
+{
+    "kind": "memory",
+    "name": "Hogwarts Legacy Lore",
+    "description": "",
+    "entries": [
+        {
+            "name": "0",
+            "entry": "Hogwarts is a school of witchcraft and wizardry located in the Scottish highlands. Witches and wizards from all over the United Kingdom come to study here from age 11 to 17. Students attend Hogwarts for 7 years.",
+            "keywords": [
+                "Hogwarts",
+                "castle"
+            ],
+            "priority": 1,
+            "weight": 1,
+            "enabled": true,
+            "keys": [
+                "Hogwarts",
+                "castle"
+            ],
+            "content": "Hogwarts is a school of witchcraft and wizardry located in the Scottish highlands. Witches and wizards from all over the United Kingdom come to study here from age 11 to 17. Students attend Hogwarts for 7 years.",
+            "insertion_order": 1,
+            "extensions": {},
+            "case_sensitive": false,
+            "id": 0,
+            "comment": "",
+            "selective": false,
+            "secondary_keys": [],
+            "constant": false,
+            "position": 1
+        },
+        {
+            "name": "1",
+            "entry": "This story takes place during the late Victorian period. The characters speak using Victorian slang and manner of speaking. Avoid anachronisms and modern topics.",
+            "keywords": [
+                "Victorian",
+                "1800s",
+                "setting"
+            ],
+            "priority": 1,
+            "weight": 1,
+            "enabled": true,
+            "keys": [
+                "Victorian",
+                "1800s",
+                "setting"
+            ],
+            "content": "This story takes place during the late Victorian period. The characters speak using Victorian slang and manner of speaking. Avoid anachronisms and modern topics.",
+            "insertion_order": 1,
+            "extensions": {},
+            "case_sensitive": false,
+            "id": 1,
+            "comment": "",
+            "selective": false,
+            "secondary_keys": [],
+            "constant": false,
+            "position": 1
+        },
+        {
+            "name": "2",
+            "entry": "Ancient magic is a type of magic only wielded and seen by a select few born with the gift. It is too powerful to be wielded by most witches and wizards, and thus must be kept a secret. Those who see, wield, and safeguard this form of magic are called Keepers.",
+            "keywords": [
+                "secret",
+                "ancient magic",
+                "powerful"
+            ],
+            "priority": 1,
+            "weight": 1,
+            "enabled": true,
+            "keys": [
+                "secret",
+                "ancient magic",
+                "powerful"
+            ],
+            "content": "Ancient magic is a type of magic only wielded and seen by a select few born with the gift. It is too powerful to be wielded by most witches and wizards, and thus must be kept a secret. Those who see, wield, and safeguard this form of magic are called Keepers.",
+            "insertion_order": 1,
+            "extensions": {},
+            "case_sensitive": false,
+            "id": 2,
+            "comment": "",
+            "selective": false,
+            "secondary_keys": [],
+            "constant": false,
+            "position": 1
+        },
+        {
+            "name": "3",
+            "entry": "Percival Rackham, a former Hogwarts professor and wielder of ancient magic, established a league of ancient magic users called the Keepers sometime in the 1600s. The Keepers were his fellow colleagues at Hogwarts: Charles Rookwood, Niamh Fitzgerald, and San Bakar.",
+            "keywords": [
+                "Charles Rookwood",
+                "secret",
+                "Keepers",
+                "Percival Rackham",
+                "ancient magic",
+                "Niamh Fitzgerald",
+                "San Bakar"
+            ],
+            "priority": 1,
+            "weight": 1,
+            "enabled": true,
+            "keys": [
+                "Charles Rookwood",
+                "secret",
+                "Keepers",
+                "Percival Rackham",
+                "ancient magic",
+                "Niamh Fitzgerald",
+                "San Bakar"
+            ],
+            "content": "Percival Rackham, a former Hogwarts professor and wielder of ancient magic, established a league of ancient magic users called the Keepers sometime in the 1600s. The Keepers were his fellow colleagues at Hogwarts: Charles Rookwood, Niamh Fitzgerald, and San Bakar.",
+            "insertion_order": 1,
+            "extensions": {},
+            "case_sensitive": false,
+            "id": 3,
+            "comment": "",
+            "selective": false,
+            "secondary_keys": [],
+            "constant": false,
+            "position": 1
+        }
+    ],
+    "is_creation": false,
+    "scan_depth": 50,
+    "token_budget": 500,
+    "recursive_scanning": false,
+    "extensions": {}
+}
