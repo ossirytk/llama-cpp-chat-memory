@@ -5,3 +5,4 @@ PyYAML==6.0.1
 toml==0.10.2
 chromadb==0.4.18
 llama-cpp-python==0.2.19
+pypdf==3.17.1
