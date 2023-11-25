@@ -6,7 +6,7 @@ Supports alpaca text prompts, v2 and tavern style json and yaml files and V2 and
 
 ### Card Format
 See [character editor](https://zoltanai.github.io/character-editor/).<BR>
-There are two example cards included 'Skynet' and ['Harry Potter'](https://chub.ai/characters/potato7295/harry-potter-bffe8945)<BR>
+There are two example cards included 'Skynet', ['Harry Potter'](https://chub.ai/characters/potato7295/harry-potter-bffe8945) and ['Bronya Zaychik'](https://chub.ai/characters/Mafiuz/bronya-zaychik-silverwing-n-ex-926eb8d4)<BR>
 'name' : 'char_name'<br>
 The name for the ai character. When using json or yaml, this is expected to correspond to avatar image. name.png or name.jpg.<br>
 'description' : 'char_persona'<br>
@@ -42,23 +42,27 @@ cd src\llama_cpp_langchain_chat<BR>
 ### Creating embeddings
 The embeddings creation uses env setting for threading and cuda
 Use --help for basic instructions.<BR>
-This will parse all txt or json files in the target directory.<BR>
+The parsing script will parse all txt or json files in the target directory. For json lorebooks a key_storage file will also be created for metadata filtering<BR>
 You might want to play with the chunk size and overlap based on your text documents<BR>
-The example documents include a txt file for skynet embeddings and a [Hogwarts](https://chub.ai/lorebooks/reallifemilf/hogwarts) lorebook<BR>
+The example documents include a txt file for skynet embeddings and json lorebooks for [Hogwarts](https://chub.ai/lorebooks/deadgirlz/hogwarts-legacy-lore-b819ccba) and [Honkai Impact](https://chub.ai/lorebooks/Zareh-Haadris/lorebook-honkai-impact-b1fcfc23)<BR>
 The supported lorebook formats are chub inferred AgnAIstic and SillyTavern original source.
 
+**!!Important!!.** You need to make sure that the documents, character_storage and key_storage folders exist.
+
 For parsing skynet.txt
->python parse_documents.py<BR>
+>python parse_text_documents.py<BR>
+
+>python parse_json_documents.py<BR>
 
 For parsing hogwarts.json lore book<BR>
-> python .\parse_documents.py --collection-name hogwarts --data-directory .\documents\hogwarts\
+> python .\parse_json_documents.py --collection-name hogwarts --data-directory .\documents\hogwarts\
 
 ### Testing embeddings
 The embeddings test uses env setting for threading and cuda
 >cd python test_embeddings.py
 
 or
->python .\test_embeddings.py --collection-name hogwarts --query "Who is Voldemort" --k 5
+>python .\test_embeddings.py --collection-name hogwarts --query "Who is Charles Rookwood" --k 5
 
 ### Running the chatbot
 >cd src\llama_cpp_langchain_chat<BR>

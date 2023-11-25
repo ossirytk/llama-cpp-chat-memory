@@ -1,19 +1,20 @@
 import argparse
 import glob
-import json
 import logging
 import os
 from os import getenv
 from os.path import join
 
+import chromadb
+from chromadb.config import Settings
 from dotenv import find_dotenv, load_dotenv
-from langchain.docstore.document import Document
 from langchain.document_loaders import TextLoader
 from langchain.embeddings import LlamaCppEmbeddings
 from langchain.text_splitter import RecursiveCharacterTextSplitter
 from langchain.vectorstores import Chroma
 
-logging.basicConfig(format="%(message)s", encoding="utf-8", level=logging.INFO)
+logging.basicConfig(format="%(message)s", encoding="utf-8", level=logging.DEBUG)
+# logging.basicConfig(format="%(message)s", encoding="utf-8", level=logging.INFO)
 load_dotenv(find_dotenv())
 
 
@@ -21,6 +22,8 @@ def main(
     documents_directory,
     collection_name,
     persist_directory,
+    chunk_size,
+    chunk_overlap,
 ) -> None:
     model_dir = getenv("MODEL_DIR")
     model = getenv("MODEL")
@@ -31,58 +34,38 @@ def main(
         "n_gpu_layers": getenv("LAYERS"),
     }
 
-    logging.info(f"Reading files from: {documents_directory}")
-    logging.info(f"Writing to: {collection_name}")
-    logging.info(f"Saving collection to: {persist_directory}")
-
     documents_pattern = os.path.join(documents_directory, "*.txt")
     documents_paths_txt = glob.glob(documents_pattern)
 
     all_documents = []
-    text_splitter = RecursiveCharacterTextSplitter(chunk_size=1024, chunk_overlap=0)
+    text_splitter = RecursiveCharacterTextSplitter(chunk_size=chunk_size, chunk_overlap=chunk_overlap)
     for txt_document in documents_paths_txt:
         loader = TextLoader(txt_document, encoding="utf-8")
         documents = loader.load()
         docs = text_splitter.split_documents(documents)
         all_documents.extend(docs)
 
-    documents_pattern = os.path.join(documents_directory, "*.json")
-    documents_paths_json = glob.glob(documents_pattern)
-
-    for json_document in documents_paths_json:
-        with open(json_document) as f:
-            content = f.read()
-        document_content = json.loads(content)
-        document_text = ""
-        if isinstance(document_content["entries"], list):
-            for entry in document_content["entries"]:
-                if "content" in entry:
-                    document_text = document_text + entry["content"]
-                elif "entry" in entry:
-                    document_text = document_text + entry["entry"]
-            metadata = {"source": json_document}
-            json_doc = [Document(page_content=document_text, metadata=metadata)]
-            json_document_content = text_splitter.split_documents(json_doc)
-            all_documents.extend(json_document_content)
-        elif isinstance(document_content["entries"], dict):
-            for entry in document_content["entries"]:
-                document_text = document_text + document_content["entries"][entry]["content"]
-            metadata = {"source": json_document}
-            json_doc = [Document(page_content=document_text, metadata=metadata)]
-            json_document_content = text_splitter.split_documents(json_doc)
-            all_documents.extend(json_document_content)
-    # logging.info(all_documents)
     llama = LlamaCppEmbeddings(
         model_path=model_source,
         **params,
     )
+    client = chromadb.PersistentClient(path=persist_directory, settings=Settings(anonymized_telemetry=False))
     Chroma.from_documents(
+        client=client,
         documents=all_documents,
         embedding=llama,
         persist_directory=persist_directory,
         collection_name=collection_name,
         collection_metadata={"hnsw:space": "l2"},
     )
+
+    # If you enable this you might want to pipe the output to a file
+    # logging.debug(all_documents)
+
+    logging.info(f"Read files from directory: {documents_directory}")
+    logging.info(f"Text parsed with chunk size: {chunk_size}, and chunk overlap: {chunk_overlap}")
+    logging.debug(f"Saved collection as: {collection_name}")
+    logging.debug(f"Saved collection to: {persist_directory}")
 
 
 if __name__ == "__main__":
@@ -109,6 +92,20 @@ if __name__ == "__main__":
         help="The directory where you want to store the Chroma collection",
     )
 
+    parser.add_argument(
+        "--chunk-size",
+        type=int,
+        default=1024,
+        help="The text chunk size for parsing",
+    )
+
+    parser.add_argument(
+        "--chunk-overlap",
+        type=int,
+        default=512,
+        help="The overlap for text chunks for parsing",
+    )
+
     # Parse arguments
     args = parser.parse_args()
 
@@ -116,4 +113,6 @@ if __name__ == "__main__":
         documents_directory=args.data_directory,
         collection_name=args.collection_name,
         persist_directory=args.persist_directory,
+        chunk_size=args.chunk_size,
+        chunk_overlap=args.chunk_overlap,
     )

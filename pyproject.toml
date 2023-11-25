@@ -15,15 +15,9 @@ authors = [
 classifiers = [
   "Development Status :: 4 - Beta",
   "Programming Language :: Python",
-  "Programming Language :: Python :: 3.7",
-  "Programming Language :: Python :: 3.8",
-  "Programming Language :: Python :: 3.9",
-  "Programming Language :: Python :: 3.10",
   "Programming Language :: Python :: 3.11",
-  "Programming Language :: Python :: Implementation :: CPython",
-  "Programming Language :: Python :: Implementation :: PyPy",
 ]
-dependencies = ["langchain==0.0.334", "chainlit==0.7.501", "llama-cpp-python==0.2.17", "Pillow==10.0.1", "PyYAML==6.0.1","toml==0.10.2","chromadb==0.4.17",]
+dependencies = ["langchain==0.0.340", "chainlit==0.7.604", "llama-cpp-python==0.2.19", "Pillow==10.0.1", "PyYAML==6.0.1","toml==0.10.2","chromadb==0.4.18",]
 
 [project.urls]
 Documentation = "https://github.com/ossirytk/llama-cpp-chat-memory/blob/main/README.md"
@@ -52,7 +46,7 @@ cov = [
 ]
 
 [[tool.hatch.envs.all.matrix]]
-python = ["3.7", "3.8", "3.9", "3.10", "3.11"]
+python = ["3.11"]
 
 [tool.hatch.envs.lint]
 detached = true
