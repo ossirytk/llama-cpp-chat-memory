@@ -24,7 +24,7 @@ CHARACTER_NAME = getenv("CHARACTER_NAME")
 
 question_generation_template = """
 {llama_instruction}
-Continue the chat dialogue below. Write {character}'s next reply in a chat between User and {character}. Write a single reply only.
+Continue the chat dialogue below. Write {character}'s next reply in a chat between User and {character}. Answer in first person. Write a single reply only.
 
 {llama_input}
 Description:
@@ -141,6 +141,10 @@ def parse_prompt():
         llama_instruction = "### Instruction:"
         llama_input = "### Input:"
         llama_response = "### Response:"
+    elif getenv("MODEL_TYPE") == "mistral":
+        llama_instruction = "[INST]\n"
+        llama_input = ""
+        llama_response = "[/INST]\n"
     else:
         llama_instruction = ""
         llama_input = ""
@@ -204,6 +208,9 @@ def get_avatar_image():
 
 
 def instantiate_retriever():
+    if getenv("COLLECTION") == "":
+        return None
+
     model_dir = getenv("MODEL_DIR")
     model = getenv("MODEL")
     model_source = join(model_dir, model)

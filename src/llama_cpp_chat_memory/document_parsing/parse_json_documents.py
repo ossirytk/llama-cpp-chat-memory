@@ -5,7 +5,7 @@ import logging
 import os
 import uuid
 from os import getenv
-from os.path import exists, join
+from os.path import join
 
 import chromadb
 from chromadb.config import Settings
@@ -24,6 +24,7 @@ def main(
     documents_directory,
     collection_name,
     persist_directory,
+    key_storage,
     chunk_size,
     chunk_overlap,
 ) -> None:
@@ -52,15 +53,18 @@ def main(
             for entry in document_content["entries"]:
                 document_text = ""
                 metadata_filters = {"source": json_document}
+
                 if "content" in entry:
                     document_text = document_text + entry["content"]
                 elif "entry" in entry:
                     document_text = document_text + entry["entry"]
+
                 logging.debug(f"Extracted a key: {entry['keys']}")
                 for m_filter in entry["keys"]:
                     filter_uuid = str(uuid.uuid1())
                     metadata_filters[filter_uuid] = m_filter
-                    all_keys[filter_uuid] = m_filter
+
+                all_keys = metadata_filters
                 json_doc = [Document(page_content=document_text, metadata=metadata_filters)]
                 json_document_content = text_splitter.split_documents(json_doc)
                 all_documents.extend(json_document_content)
@@ -69,11 +73,13 @@ def main(
             for entry in document_content["entries"]:
                 metadata_filters = {"source": json_document}
                 document_text = document_text + document_content["entries"][entry]["content"]
+
                 logging.debug(f"Extracted a key: {document_content['entries'][entry]['key']}")
                 for m_filter in document_content["entries"][entry]["key"]:
                     filter_uuid = str(uuid.uuid1())
                     metadata_filters[filter_uuid] = m_filter
-                    all_keys[filter_uuid] = m_filter
+
+                all_keys = metadata_filters
                 json_doc = [Document(page_content=document_text, metadata=metadata_filters)]
                 json_document_content = text_splitter.split_documents(json_doc)
                 all_documents.extend(json_document_content)
@@ -100,13 +106,9 @@ def main(
     # If you enable this you might want to pipe the output to a file
     # logging.debug(all_documents)
 
-    use_keys = getenv("USE_KEY_STORAGE")
-    if use_keys:
-        key_storage = getenv("KEY_STORAGE_DIRECTORY")
-        key_storage_path = os.path.join(key_storage, collection_name + ".json")
-        if exists(key_storage_path):
-            with open(key_storage_path, "w") as key_file:
-                key_file.write(json_key_file)
+    key_storage_path = os.path.join(key_storage, collection_name + ".json")
+    with open(key_storage_path, "w") as key_file:
+        key_file.write(json_key_file)
 
     logging.info(f"Read files from directory: {documents_directory}")
     logging.info(f"Text parsed with chunk size: {chunk_size}, and chunk overlap: {chunk_overlap}")
@@ -140,6 +142,13 @@ if __name__ == "__main__":
     )
 
     parser.add_argument(
+        "--key-storage",
+        type=str,
+        default="../key_storage/",
+        help="The directory where you want to store the Chroma collection metadata keys",
+    )
+
+    parser.add_argument(
         "--chunk-size",
         type=int,
         default=1024,
@@ -160,6 +169,7 @@ if __name__ == "__main__":
         documents_directory=args.data_directory,
         collection_name=args.collection_name,
         persist_directory=args.persist_directory,
+        key_storage=args.key_storage,
         chunk_size=args.chunk_size,
         chunk_overlap=args.chunk_overlap,
     )

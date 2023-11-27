@@ -17,7 +17,7 @@ classifiers = [
   "Programming Language :: Python",
   "Programming Language :: Python :: 3.11",
 ]
-dependencies = ["langchain==0.0.340", "chainlit==0.7.604", "llama-cpp-python==0.2.19", "Pillow==10.0.1", "PyYAML==6.0.1","toml==0.10.2","chromadb==0.4.18","pypdf==3.17.1"]
+dependencies = ["langchain==0.0.340", "chainlit==0.7.604", "llama-cpp-python==0.2.19", "Pillow==10.0.1", "PyYAML==6.0.1","toml==0.10.2","chromadb==0.4.18","pypdf==3.17.1", "textacy==0.13.0", "simsimd==3.5.5"]
 
 [project.urls]
 Documentation = "https://github.com/ossirytk/llama-cpp-chat-memory/blob/main/README.md"

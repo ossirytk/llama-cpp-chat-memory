@@ -10,8 +10,8 @@ from dotenv import find_dotenv, load_dotenv
 from langchain.embeddings import LlamaCppEmbeddings
 from langchain.vectorstores import Chroma
 
-logging.basicConfig(format="%(message)s", encoding="utf-8", level=logging.DEBUG)
-# logging.basicConfig(format="%(message)s", encoding="utf-8", level=logging.INFO)
+# logging.basicConfig(format="%(message)s", encoding="utf-8", level=logging.DEBUG)
+logging.basicConfig(format="%(message)s", encoding="utf-8", level=logging.INFO)
 load_dotenv(find_dotenv())
 
 
@@ -60,15 +60,12 @@ def main(
     filter_list = {}
     if all_keys:
         for item in all_keys.items():
-            if item[1] in query:
+            if item[1].lower() in query.lower():
                 filter_list[item[0]] = item[1]
                 metadata_filter_list.append({item[0]: {"$in": [item[1]]}})
     else:
         logging.debug("No keys")
 
-    logging.info(f"There are {db._collection.count()} documents in the collection")
-    logging.info("Similiarity search")
-    logging.info("--------------------------------------------------------------------")
     if len(filter_list) == 1:
         where = filter_list
     elif len(filter_list) > 1:
@@ -76,13 +73,17 @@ def main(
     else:
         where = None
     # query it
+    logging.info(f"There are {db._collection.count()} documents in the collection")
+    logging.debug(f"filter is: {where}")
+    logging.info("Similiarity search")
+    logging.info("--------------------------------------------------------------------")
     docs = db.similarity_search_with_score(query=query, k=k, filter=where)
     vector_context = ""
     for answer in docs:
-        logging.info("--------------------------------------------------------------------")
-        logging.info(f"distance: {answer[1]}")
-        logging.info(answer[0].metadata)
-        logging.info(answer[0].page_content)
+        logging.debug("--------------------------------------------------------------------")
+        logging.debug(f"distance: {answer[1]}")
+        logging.debug(answer[0].metadata)
+        logging.debug(answer[0].page_content)
         vector_context = vector_context + answer[0].page_content
     logging.info("--------------------------------------------------------------------")
     logging.info(vector_context)
@@ -93,8 +94,8 @@ def main(
 
     vector_context = ""
     for answer in docs:
-        logging.info("--------------------------------------------------------------------")
-        logging.info(answer.page_content)
+        logging.debug("--------------------------------------------------------------------")
+        logging.debug(answer.page_content)
         vector_context = vector_context + answer.page_content
     logging.info("--------------------------------------------------------------------")
     logging.info(vector_context)

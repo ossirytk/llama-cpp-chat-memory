@@ -1,5 +1,6 @@
 import argparse
 import glob
+import json
 import logging
 import os
 from os import getenv
@@ -24,6 +25,7 @@ def main(
     persist_directory,
     chunk_size,
     chunk_overlap,
+    key_storage,
 ) -> None:
     model_dir = getenv("MODEL_DIR")
     model = getenv("MODEL")
@@ -45,6 +47,22 @@ def main(
         docs = text_splitter.split_documents(documents)
         all_documents.extend(docs)
 
+    key_storage_path = join(key_storage, collection_name + ".json")
+
+    with open(key_storage_path) as key_file:
+        content = key_file.read()
+    all_keys = json.loads(content)
+    logging.debug(f"Loading filter list from: {key_storage_path}")
+    logging.debug(f"Filter keys: {all_keys}")
+
+    # If a metadata filter is found in the chunk, then add as metadata for that chunk
+    for chunk in all_documents:
+        logging.debug("-----------------------------------")
+        for key in all_keys:
+            if all_keys[key].lower() in chunk.page_content.lower():
+                chunk.metadata[key] = all_keys[key]
+        logging.debug(chunk)
+
     llama = LlamaCppEmbeddings(
         model_path=model_source,
         **params,
@@ -59,9 +77,7 @@ def main(
         collection_metadata={"hnsw:space": "l2"},
     )
 
-    # If you enable this you might want to pipe the output to a file
-    # logging.debug(all_documents)
-
+    logging.info(f"Read metadata filters from directory: {key_storage_path}")
     logging.info(f"Read files from directory: {documents_directory}")
     logging.info(f"Text parsed with chunk size: {chunk_size}, and chunk overlap: {chunk_overlap}")
     logging.debug(f"Saved collection as: {collection_name}")
@@ -93,6 +109,13 @@ if __name__ == "__main__":
     )
 
     parser.add_argument(
+        "--key-storage",
+        type=str,
+        default="../key_storage/",
+        help="The directory where you want to store the Chroma collection metadata keys",
+    )
+
+    parser.add_argument(
         "--chunk-size",
         type=int,
         default=1024,
@@ -102,7 +125,7 @@ if __name__ == "__main__":
     parser.add_argument(
         "--chunk-overlap",
         type=int,
-        default=512,
+        default=0,
         help="The overlap for text chunks for parsing",
     )
 
@@ -113,6 +136,7 @@ if __name__ == "__main__":
         documents_directory=args.data_directory,
         collection_name=args.collection_name,
         persist_directory=args.persist_directory,
+        key_storage=args.key_storage,
         chunk_size=args.chunk_size,
         chunk_overlap=args.chunk_overlap,
     )
