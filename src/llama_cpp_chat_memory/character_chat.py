@@ -46,45 +46,48 @@ async def start():
 
 async def get_answer(message, llm_chain: ConversationChain, callback):
     logging.debug(message)
+    vector_context = ""
+    if RETRIEVER:
+        # Currently Chroma has no "like" implementation so this is a case sensitive hack with uuids
+        # There is also an issue when filter has only one item since "in" expects multiple items
+        # With one item, just use a dict with "uuid", "filter"
+        metadata_filter_list = []
+        filter_list = {}
+        if ALL_KEYS is not None:
+            for item in ALL_KEYS.items():
+                if item[1].lower() in message.lower():
+                    filter_list[item[0]] = item[1]
+                    metadata_filter_list.append({item[0]: {"$in": [item[1]]}})
 
-    # Currently Chroma has no "like" implementation so this is a case sensitive hack with uuids
-    # There is also an issue when filter has only one item since "in" expects multiple items
-    # With one item, just use a dict with "uuid", "filter"
-    metadata_filter_list = []
-    filter_list = {}
-    if ALL_KEYS is not None:
-        for item in ALL_KEYS.items():
-            if item[1] in message:
-                filter_list[item[0]] = item[1]
-                metadata_filter_list.append({item[0]: {"$in": [item[1]]}})
+        if len(filter_list) == 1:
+            where = filter_list
+        elif len(filter_list) > 1:
+            where = {"$or": metadata_filter_list}
+        else:
+            where = None
 
-    if len(filter_list) == 1:
-        where = filter_list
-    elif len(filter_list) > 1:
-        where = {"$or": metadata_filter_list}
-    else:
-        where = None
+        query_type = getenv("QUERY_TYPE")
+        k = int(getenv("VECTOR_K"))
+        logging.debug(f"There are {RETRIEVER._collection.count()} documents in the collection")
+        if query_type == "similarity":
+            docs = RETRIEVER.similarity_search_with_score(query=message, k=k, filter=where)
+            for answer in docs:
+                vector_context = vector_context + answer[0].page_content
+        elif query_type == "mmr":
+            docs = RETRIEVER.max_marginal_relevance_search(
+                query=message,
+                k=k,
+                fetch_k=int(getenv("FETCH_K")),
+                lambda_mult=float64(getenv("LAMBDA_MULT")),
+                filter=where,
+            )
+            for answer in docs:
+                vector_context = vector_context + answer.page_content
+        else:
+            logging.error(f"{query_type} is not implemented")
+            raise NotImplementedError()
 
-    query_type = getenv("QUERY_TYPE")
-    k = int(getenv("VECTOR_K"))
-    logging.debug(f"There are {RETRIEVER._collection.count()} documents in the collection")
-    if query_type == "similarity":
-        docs = RETRIEVER.similarity_search_with_score(query=message, k=k, filter=where)
-        vector_context = ""
-        for answer in docs:
-            vector_context = vector_context + answer[0].page_content
-    elif query_type == "mmr":
-        docs = RETRIEVER.max_marginal_relevance_search(
-            query=message, k=k, fetch_k=int(getenv("FETCH_K")), lambda_mult=float64(getenv("LAMBDA_MULT")), filter=where
-        )
-        vector_context = ""
-        for answer in docs:
-            vector_context = vector_context + answer.page_content
-    else:
-        logging.error(f"{query_type} is not implemented")
-        raise NotImplementedError()
-
-    logging.debug(vector_context)
+        logging.debug(vector_context)
     llm_chain.prompt = llm_chain.prompt.partial(vector_context=vector_context)
 
     result = await cl.make_async(llm_chain)(message, callbacks=[callback], return_only_outputs=True)
