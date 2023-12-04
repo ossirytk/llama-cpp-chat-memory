@@ -9,6 +9,7 @@ import chromadb
 import toml
 import yaml
 from chromadb.config import Settings
+from custom_llm_classes.custom_spacy_embeddings import CustomSpacyEmbeddings
 from dotenv import find_dotenv, load_dotenv
 from langchain.embeddings import LlamaCppEmbeddings
 from langchain.llms import LlamaCpp
@@ -20,7 +21,7 @@ logging.basicConfig(format="%(message)s", encoding="utf-8", level=logging.DEBUG)
 # logging.basicConfig(format="%(message)s", encoding="utf-8", level=logging.INFO)
 load_dotenv(find_dotenv())
 CARD_AVATAR = None
-CHARACTER_NAME = getenv("CHARACTER_NAME")
+CHARACTER_NAME = None
 
 question_generation_template = """
 {llama_instruction}
@@ -47,6 +48,7 @@ Question: {input}
 {llama_response}
 """  # noqa: E501
 
+# Get metadata filter keys for this collection
 def parse_keys():
     use_keys = getenv("USE_KEY_STORAGE")
     collection_name = getenv("COLLECTION")
@@ -66,6 +68,9 @@ def parse_keys():
 def parse_prompt():
     # Currently the chat welcome message is read from chainlit.md file.
     script_root_path = dirname(realpath(__file__))
+    # TODO Improve this. Loading new cards seems to require reloading the card.
+    # Might have to do with some racing condition where the md file gets loaded
+    # before it gets updated
     help_file_path = join(script_root_path, "chainlit.md")
     config_toml_path = join(script_root_path, ".chainlit", "config.toml")
     prompt_dir = getenv("CHARACTER_CARD_DIR")
@@ -81,6 +86,8 @@ def parse_prompt():
             with open(prompt_source) as f:
                 card = yaml.safe_load(f)
         case ".png":
+            # TODO a better implementation for the globals
+            # Consider reloacating the content from init
             global CARD_AVATAR
             is_v2 = False
             if fnmatch.fnmatch(prompt_source, "*v2.png"):
@@ -88,8 +95,9 @@ def parse_prompt():
             elif fnmatch.fnmatch(prompt_source, "*tavern.png"):
                 is_v2 = False
             else:
-                logging.error("ERROR")
-                # TODO ERROR
+                error_message= f"Unrecognized card type for : {prompt_source}"
+                logging.error("Could not load card info")
+                raise ValueError(error_message)
             im = Image.open(prompt_source)
             im.load()
             card = None
@@ -137,6 +145,8 @@ def parse_prompt():
     with open(config_toml_path, "w") as toml_file:
         toml.dump(toml_dict, toml_file)
 
+    # Supported model types are mistral and alpaca
+    # Feel free to add things here
     if getenv("MODEL_TYPE") == "alpaca":
         llama_instruction = "### Instruction:"
         llama_input = "### Input:"
@@ -206,7 +216,6 @@ def get_avatar_image():
     else:
         return CARD_AVATAR
 
-
 def instantiate_retriever():
     if getenv("COLLECTION") == "":
         return None
@@ -216,18 +225,31 @@ def instantiate_retriever():
     model_source = join(model_dir, model)
 
     client = chromadb.PersistentClient(path=getenv("PERSIST_DIRECTORY"), settings=Settings(anonymized_telemetry=False))
-    embedding_params = {
-        "n_ctx": getenv("N_CTX"),
-        "n_batch": 1024,
-        "n_gpu_layers": getenv("LAYERS"),
-    }
 
-    llama_embeddings = LlamaCppEmbeddings(model_path=model_source, **embedding_params,)
+    embeddings_type = getenv("EMBEDDINGS_TYPE")
+
+    if embeddings_type == "llama":
+        logging.info("Using llama embeddigs")
+        params = {
+            "n_ctx": getenv("N_CTX"),
+            "n_batch": 1024,
+            "n_gpu_layers": getenv("LAYERS"),
+        }
+        embedder = LlamaCppEmbeddings(
+            model_path=model_source,
+            **params,
+        )
+    elif embeddings_type == "spacy":
+        logging.info("Using spacy embeddigs")
+        embedder = CustomSpacyEmbeddings()
+    else:
+        error_message = f"Unsupported embeddings type: {embeddings_type}"
+        raise ValueError(error_message)
     db = Chroma(
         client=client,
         collection_name=getenv("COLLECTION"),
         persist_directory=getenv("PERSIST_DIRECTORY"),
-        embedding_function=llama_embeddings
+        embedding_function=embedder
         )
 
     return db
@@ -238,6 +260,7 @@ def instantiate_llm():
     model = getenv("MODEL")
     model_source = join(model_dir, model)
 
+    # Add things here if you want to play with the model params
     params = {
         "n_ctx": getenv("N_CTX"),
         "temperature": 0.6,

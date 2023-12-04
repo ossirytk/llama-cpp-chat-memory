@@ -7,6 +7,7 @@ from os.path import join
 
 import chromadb
 from chromadb.config import Settings
+from custom_llm_classes.custom_spacy_embeddings import CustomSpacyEmbeddings
 from dotenv import find_dotenv, load_dotenv
 from langchain.document_loaders import PyPDFLoader
 from langchain.embeddings import LlamaCppEmbeddings
@@ -24,15 +25,11 @@ def main(
     persist_directory,
     chunk_size,
     chunk_overlap,
+    embeddings_type,
 ) -> None:
     model_dir = getenv("MODEL_DIR")
     model = getenv("MODEL")
     model_source = join(model_dir, model)
-    params = {
-        "n_ctx": getenv("N_CTX"),
-        "n_batch": 1024,
-        "n_gpu_layers": getenv("LAYERS"),
-    }
 
     documents_pattern = os.path.join(documents_directory, "*.pdf")
     logging.debug(f"documents search pattern: {documents_pattern}")
@@ -46,15 +43,29 @@ def main(
         docs = loader.load_and_split(text_splitter=text_splitter)
         all_documents.extend(docs)
 
-    llama = LlamaCppEmbeddings(
-        model_path=model_source,
-        **params,
-    )
+    if embeddings_type == "llama":
+        params = {
+            "n_ctx": getenv("N_CTX"),
+            "n_batch": 1024,
+            "n_gpu_layers": getenv("LAYERS"),
+        }
+
+        logging.info("Using llama embeddigs")
+        embedder = LlamaCppEmbeddings(
+            model_path=model_source,
+            **params,
+        )
+    elif embeddings_type == "spacy":
+        logging.info("Using spacy embeddigs")
+        embedder = CustomSpacyEmbeddings(model_path="en_core_web_lg")
+    else:
+        error_message = f"Unsupported embeddings type: {embeddings_type}"
+        raise ValueError(error_message)
     client = chromadb.PersistentClient(path=persist_directory, settings=Settings(anonymized_telemetry=False))
     Chroma.from_documents(
         client=client,
         documents=all_documents,
-        embedding=llama,
+        embedding=embedder,
         persist_directory=persist_directory,
         collection_name=collection_name,
         collection_metadata={"hnsw:space": "l2"},
@@ -77,7 +88,7 @@ if __name__ == "__main__":
     parser.add_argument(
         "--data-directory",
         type=str,
-        default="../documents/fyodor_dostoyevsky",
+        default="./documents/fyodor_dostoyevsky",
         help="The directory where your text files are stored",
     )
     parser.add_argument(
@@ -89,7 +100,7 @@ if __name__ == "__main__":
     parser.add_argument(
         "--persist-directory",
         type=str,
-        default="../character_storage/",
+        default="./character_storage/",
         help="The directory where you want to store the Chroma collection",
     )
 
@@ -107,6 +118,13 @@ if __name__ == "__main__":
         help="The overlap for text chunks for parsing",
     )
 
+    parser.add_argument(
+        "--embeddings-type",
+        type=str,
+        default="spacy",
+        help="The chosen embeddings type",
+    )
+
     # Parse arguments
     args = parser.parse_args()
 
@@ -116,4 +134,5 @@ if __name__ == "__main__":
         persist_directory=args.persist_directory,
         chunk_size=args.chunk_size,
         chunk_overlap=args.chunk_overlap,
+        embeddings_type=args.embeddings_type,
     )

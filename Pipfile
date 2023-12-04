@@ -12,6 +12,9 @@ chromadb="==0.4.18"
 llama-cpp-python = "==0.2.19"
 toml = "==0.10.2"
 pypdf = "==3.17.1"
+textacy = "==0.13.0"
+simsimd = "==3.5.5"
+sentence-transformers = "==2.2.2"
 
 [dev-packages]
 

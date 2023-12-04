@@ -25,15 +25,18 @@ logging.basicConfig(format="%(message)s", encoding="utf-8", level=logging.DEBUG)
 
 @cl.author_rename
 def rename(orig_author: str):
+    # Renames chatbot to whatever the current character card name is
     rename_dict = {"Chatbot": CHARACTER_NAME}
     return rename_dict.get(orig_author, orig_author)
 
 
 @cl.on_chat_start
 async def start():
+    # Set the chatbot icon to character icon
     if USE_AVATAR_IMAGE:
         await cl.Avatar(name=CHARACTER_NAME, path=AVATAR_IMAGE, size="large").send()
 
+    # Use basic conversation chain with buffered conversation fistory
     chain = ConversationChain(
         prompt=PROMPT,
         llm=LLM_MODEL,
@@ -90,6 +93,7 @@ async def get_answer(message, llm_chain: ConversationChain, callback):
         logging.debug(vector_context)
     llm_chain.prompt = llm_chain.prompt.partial(vector_context=vector_context)
 
+    # You will need make_async to actually make this run asynchronoysly
     result = await cl.make_async(llm_chain)(message, callbacks=[callback], return_only_outputs=True)
     return result["response"]
 

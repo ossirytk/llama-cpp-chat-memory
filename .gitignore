@@ -1,7 +1,8 @@
 .vscode
 .env
+.env_test
 dist/
-src/llama_cpp_chat_memory/__pycache__/
+__pycache__/
 src/llama_cpp_chat_memory/chroma_storage/
 src/llama_cpp_chat_memory/character_storage/
 src/llama_cpp_chat_memory/key_storage/
