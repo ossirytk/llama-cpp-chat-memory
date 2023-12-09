@@ -1,5 +1,40 @@
 # llama-cpp-chat-memory
-Llamacpp chat with langchain and chainlit using vector stores as memory. This project mainly serves as a simple example of langchain chatbot and is a template for further langchain projects. Uses chainlit as a dropin UI chatbot so there is basically no ui code. 
+This project is a llama-cpp character AI chatbot using tavern or V2 character cards and ChromaDB for character memory. You can use it as just a normal chatbot by setting the collection to "" in setting. 
+
+There are several scripts for parsing json lorebooks, pdt, textfiles and scarping web pages for the memory content. Also included are scripts for parsing metadata from documents automatically. 
+
+This project mainly serves as an example of langchain chatbot and memory, and is a template for further langchain projects. Uses chainlit as a dropin UI for the chatbot so there is basically no ui code. 
+
+### Quickstart
+You will need venv, pipenv or hatch to run this project. Hatch is recommended. You can install hatch with pipx
+>pip install pipx</BR>
+pipx install hatch</BR>
+
+Then from the repo root folder run
+>hatch shell chat</BR>
+cd .\src\llama_cpp_chat_memory\
+python -m spacy download en_core_web_lg</BR>
+playwright install</BR>
+
+You will need playwright for webscraping and the spacy models fot text embeddings if you do not use llama-cpp embeddings.</BR>
+
+You might want to run llama-cpp with gpu acceleration like cuda. See [llama-cpp-python](https://github.com/abetlen/llama-cpp-python) for specifics. Then run:
+>$env:FORCE_CMAKE=1</BR>
+$env:CMAKE_ARGS="-DLLAMA_CUBLAS=on"</BR>
+pip install llama-cpp-python --force-reinstall --upgrade --no-cache-dir --no-deps</BR>
+
+Note that this example is for powershell and for the latest llama-cpp-python. You will need to change the command based on the terminal and the llama-cpp-python version.</BR>
+
+Get a gguf model from a site like
+[The Bloke](https://huggingface.co/models?sort=modified&search=theBloke+gguf)
+and a character card and lorebooks from a site like [Chub.ai](https://chub.ai/) or make your own with [character editor](https://zoltanai.github.io/character-editor/)<BR>
+
+Change the .env_test to .env and make sure that the correct folders exist.</BR>
+
+You can set the collection to "" and try the chatbot by running:
+>chainlit run character_chat.py</BR>
+
+If you want to create memory then see more details below.
 
 ### Prompt Support
 Supports alpaca and mistral text prompts, v2 and tavern style json and yaml files and V2 and tavern png cards. Avatar images need to be in the same folder as the prompt file. V2 and Tavern png files get a copy of the image without exif data in the project temp file.
@@ -53,6 +88,18 @@ OR<BR>
 (optional for cuda support)$env:CMAKE_ARGS="-DLLAMA_CUBLAS=on"<BR>
 (optional for cuda support)pip install llama-cpp-python==VERSION --force-reinstall --upgrade --no-cache-dir --no-deps<BR>
 cd src\llama_cpp_langchain_chat<BR>
+
+### Web Scparing
+You can scrape web pages to text documents in order to use them as documents for chroma. The web scraping uses playwright and requires that the web engines are installed. After starting the virtual env run:</BR>
+
+> playwright install
+
+The web scraping is prepared with config files in web_scrape_configs folder. The format is in json. See the example files for the specfics. The current impelemntation is unoptimized, so use with caution for a large number of pages.</BR>
+
+To run the scrape run:
+>python -m document-parsing.web_craper</BR>
+
+See --help for params
 
 ### Creating embeddings
 The embeddings creation uses env setting for threading and cuda

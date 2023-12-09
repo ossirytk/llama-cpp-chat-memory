@@ -11,8 +11,8 @@ from dotenv import find_dotenv, load_dotenv
 from langchain.embeddings import LlamaCppEmbeddings
 from langchain.vectorstores import Chroma
 
-# logging.basicConfig(format="%(message)s", encoding="utf-8", level=logging.DEBUG)
-logging.basicConfig(format="%(message)s", encoding="utf-8", level=logging.INFO)
+logging.basicConfig(format="%(message)s", encoding="utf-8", level=logging.DEBUG)
+# logging.basicConfig(format="%(message)s", encoding="utf-8", level=logging.INFO)
 load_dotenv(find_dotenv())
 
 
@@ -55,13 +55,13 @@ def main(
         key_storage = getenv("KEY_STORAGE_DIRECTORY")
         key_storage_path = join(".", key_storage, collection_name + ".json")
         if exists(key_storage_path):
-            with open(key_storage_path) as key_file:
+            with open(key_storage_path, encoding="utf-8") as key_file:
                 content = key_file.read()
             all_keys = json.loads(content)
         else:
             logging.debug("Could not load filter list")
     logging.debug(f"Loading filter list from: {key_storage_path}")
-    logging.debug(f"Filter keys: {all_keys}")
+    # logging.debug(f"Filter keys: {all_keys}")
 
     # Currently Chroma has no "like" implementation so this is a case sensitive hack
     # There is also an issue with the filter only having one item so we use filter_list in this case

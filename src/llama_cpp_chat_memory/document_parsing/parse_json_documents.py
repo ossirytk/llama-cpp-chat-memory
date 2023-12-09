@@ -42,7 +42,7 @@ def main(
     documents_paths_json = glob.glob(documents_pattern)
 
     for json_document in documents_paths_json:
-        with open(json_document) as f:
+        with open(json_document, encoding="utf-8") as f:
             content = f.read()
         document_content = json.loads(content)
         if isinstance(document_content["entries"], list):
@@ -117,7 +117,7 @@ def main(
     # logging.debug(all_documents)
 
     key_storage_path = os.path.join(key_storage, collection_name + ".json")
-    with open(key_storage_path, "w") as key_file:
+    with open(key_storage_path, "w", encoding="utf-8") as key_file:
         key_file.write(json_key_file)
 
     logging.info(f"Read files from directory: {documents_directory}")
