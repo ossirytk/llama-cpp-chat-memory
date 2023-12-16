@@ -15,8 +15,8 @@ from langchain.embeddings import LlamaCppEmbeddings
 from langchain.text_splitter import RecursiveCharacterTextSplitter
 from langchain.vectorstores import Chroma
 
-logging.basicConfig(format="%(message)s", encoding="utf-8", level=logging.DEBUG)
-# logging.basicConfig(format="%(message)s", encoding="utf-8", level=logging.INFO)
+# logging.basicConfig(format="%(message)s", encoding="utf-8", level=logging.DEBUG)
+logging.basicConfig(format="%(message)s", encoding="utf-8", level=logging.INFO)
 load_dotenv(find_dotenv())
 
 
@@ -46,11 +46,11 @@ def main(
 
     key_storage_path = join(key_storage, collection_name + ".json")
 
-    with open(key_storage_path) as key_file:
+    with open(key_storage_path, encoding="utf-8") as key_file:
         content = key_file.read()
     all_keys = json.loads(content)
     logging.debug(f"Loading filter list from: {key_storage_path}")
-    logging.debug(f"Filter keys: {all_keys}")
+    # logging.debug(f"Filter keys: {all_keys}")
 
     # If a metadata filter is found in the chunk, then add as metadata for that chunk
     for chunk in all_documents:
