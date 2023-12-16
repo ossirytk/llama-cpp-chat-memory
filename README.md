@@ -57,6 +57,8 @@ A landing page for the chat. This will not be included in the prompt.
 See the configuration params in .env.example file
 VECTOR_K is the value for vector storage documents for how many documents should be returned. You might need to change this based on your context and vector store chunk size. BUFFER_K is the size for conversation buffer. The prompt will include last K qustion answer pairs. Having large VECTOR_K and BUFFER_K can overfill the prompt. The default character card is Skynet_V2.png. This is just a basic template. You can check and edit the content in [character editor](https://zoltanai.github.io/character-editor/)
 
+The available embeddings are llama,spacy and hugginface. Make sure that the config for the chat matches the embeddings that were used to create the chroma collection. 
+
 ### Preparing the env
 You will need a llama model that is compatible with llama-cpp. See models in HuggingFace by [The Bloke](https://huggingface.co/models?sort=modified&search=theBloke+gguf)<BR>
 You might want to build with cuda support. <BR>
