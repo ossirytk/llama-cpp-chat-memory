@@ -11,9 +11,9 @@ import yaml
 from chromadb.config import Settings
 from custom_llm_classes.custom_spacy_embeddings import CustomSpacyEmbeddings
 from dotenv import find_dotenv, load_dotenv
-from langchain.embeddings import LlamaCppEmbeddings
+from langchain.embeddings import HuggingFaceEmbeddings, LlamaCppEmbeddings
 from langchain.llms import LlamaCpp
-from langchain.prompts import PromptTemplate
+from langchain.prompts import PromptTemplate, load_prompt
 from langchain.vectorstores import Chroma
 from PIL import Image
 
@@ -76,6 +76,9 @@ def parse_prompt():
     prompt_dir = getenv("CHARACTER_CARD_DIR")
     prompt_name = getenv("CHARACTER_CARD")
     prompt_source = join(prompt_dir, prompt_name)
+    prompt_template_dir = getenv("PROMPT_TEMPLATE_DIRECTORY")
+    prompt_template_name = getenv("PROMPT_TEMPLATE")
+    prompt_template_path = join(prompt_template_dir, prompt_template_name)
     extension = splitext(prompt_source)[1]
     match extension:
         case ".json":
@@ -122,18 +125,9 @@ def parse_prompt():
             else:
                 CARD_AVATAR = copy_image_filename
 
-    prompt = PromptTemplate(template=question_generation_template, input_variables=[
-        "character",
-        "description",
-        "scenario",
-        "mes_example",
-        "input",
-        "llama_input",
-        "llama_instruction",
-        "llama_response",
-        "vector_context",
-        "history"
-        ])
+
+    prompt = load_prompt(prompt_template_path)
+
     global CHARACTER_NAME
     char_name = card["name"] if "name" in card else card["char_name"]
     CHARACTER_NAME = char_name
@@ -242,6 +236,12 @@ def instantiate_retriever():
     elif embeddings_type == "spacy":
         logging.info("Using spacy embeddigs")
         embedder = CustomSpacyEmbeddings()
+    elif embeddings_type == "huggingface":
+        logging.info("Using huggingface embeddigs")
+        model_name = "sentence-transformers/all-mpnet-base-v2"
+        model_kwargs = {"device": "cpu"}
+        encode_kwargs = {"normalize_embeddings": False}
+        embedder = HuggingFaceEmbeddings(model_name=model_name, model_kwargs=model_kwargs, encode_kwargs=encode_kwargs)
     else:
         error_message = f"Unsupported embeddings type: {embeddings_type}"
         raise ValueError(error_message)

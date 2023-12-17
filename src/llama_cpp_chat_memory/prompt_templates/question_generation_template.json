@@ -1,0 +1,16 @@
+{
+    "_type": "prompt",
+    "input_variables": [
+        "llama_instruction",
+        "character",
+        "llama_input",
+        "description",
+        "scenario",
+        "mes_example",
+        "vector_context",
+        "history",
+        "input",
+        "llama_response"
+    ],
+    "template": "{llama_instruction}\nContinue the chat dialogue below. Write {character}'s next reply in a chat between User and {character}. Answer in first person. Write a single reply only.\n\n{llama_input}\nDescription:\n{description}\n\nScenario:\n{scenario}\n\nMessage Examples:\n{mes_example}\n\nContext:\n{vector_context}\n\nCurrent conversation:\n{history}\n\nQuestion: {input}\n\n{llama_response}"
+}
