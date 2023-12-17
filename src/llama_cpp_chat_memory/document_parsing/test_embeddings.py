@@ -17,11 +17,11 @@ load_dotenv(find_dotenv())
 
 
 def main(
-    query,
-    k,
-    collection_name,
-    persist_directory,
-    embeddings_type,
+    query: str,
+    k: int,
+    collection_name: str,
+    persist_directory: str,
+    embeddings_type: str,
 ) -> None:
     model_dir = getenv("MODEL_DIR")
     model = getenv("MODEL")
