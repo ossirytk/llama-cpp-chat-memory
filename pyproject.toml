@@ -26,11 +26,13 @@ dependencies = [
 "toml==0.10.2",
 "chromadb==0.4.20",
 "pypdf==3.17.1",
-"textacy==0.13.0",
 "sentence-transformers==2.2.2",
 "simsimd==3.5.5",
 "beautifulsoup4==4.12.2",
 "playwright==1.40.0",
+"pydantic==2.5.2",
+"cytoolz==0.12.2",
+"spacy==3.7.2",
 ]
 
 [project.urls]
