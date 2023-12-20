@@ -21,7 +21,7 @@ import collections.abc
 import operator
 from array import array
 from collections.abc import Iterable
-from typing import DefaultDict, Literal, Optional, Union
+from typing import Literal
 
 import numpy as np
 import scipy.sparse as sp
@@ -295,10 +295,8 @@ class Vectorizer:
                 vocab: dict[str, int] = {}
                 for i, term in enumerate(sorted(vocabulary)):
                     if vocab.setdefault(term, i) != i:
-                        msg = f"Terms in `vocabulary` must be unique, but '{term}' " "was found more than once."
-                        raise ValueError(
-                            msg
-                        )
+                        msg = f"Terms in `vocabulary` must be unique, but '{term}' was found more than once."
+                        raise ValueError(msg)
                 vocabulary = vocab
             else:
                 ids = set(vocabulary.values())
@@ -309,9 +307,7 @@ class Vectorizer:
                         "Term ids in `vocabulary` must be unique, but "
                         f"{n_dupe_term_ids} ids were assigned to more than one term."
                     )
-                    raise ValueError(
-                        msg
-                    )
+                    raise ValueError(msg)
                 for i in range(len(vocabulary)):
                     if i not in ids:
                         msg = (
@@ -319,9 +315,7 @@ class Vectorizer:
                             f"not have any gaps, but term id {i} is missing from "
                             f"a vocabulary of {len(vocabulary)} terms"
                         )
-                        raise ValueError(
-                            msg
-                        )
+                        raise ValueError(msg)
             if not vocabulary:
                 msg = "`vocabulary` must not be empty."
                 raise ValueError(msg)
@@ -1068,7 +1062,7 @@ class GroupVectorizer(Vectorizer):
         data = array("i")
         cols = array("i")
         rows = array("i")
-        for grp, terms in zip(grps, tokenized_docs):
+        for grp, terms in zip(grps, tokenized_docs, strict=True):
             try:
                 grp_idx = vocabulary_grps[grp]
             except KeyError:

@@ -6,7 +6,7 @@ from __future__ import annotations
 
 import pickle
 from collections.abc import Iterable
-from typing import Literal, Optional
+from typing import Literal
 
 from document_parsing import spacier
 from document_parsing.io import utils as io_utils
@@ -56,9 +56,7 @@ def read_spacy_docs(
                 "the binary data. Note that this should be the same language pipeline "
                 "used when processing the original docs!"
             )
-            raise ValueError(
-                msg
-            )
+            raise ValueError(msg)
         else:
             lang = spacier.utils.resolve_langlike(lang)
         docbin = DocBin().from_disk(filepath)

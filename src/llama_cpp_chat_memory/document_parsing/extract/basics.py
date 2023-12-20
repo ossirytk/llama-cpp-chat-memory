@@ -9,7 +9,6 @@ from __future__ import annotations
 
 from collections.abc import Collection, Iterable
 from functools import partial
-from typing import Optional, Union
 
 from cytoolz import itertoolz
 from document_parsing.utils import constants, errors, types, utils
@@ -238,9 +237,7 @@ def _parse_ent_types(ent_types: str | Collection[str] | None, which: str) -> str
         else:
             return ent_types
     else:
-        raise TypeError(
-            errors.type_invalid_msg(f"{which}_types", type(ent_types), Optional[str | Collection[str]])
-        )
+        raise TypeError(errors.type_invalid_msg(f"{which}_types", type(ent_types), [str | Collection[str]] | None))
 
 
 def noun_chunks(doclike: types.DocLike, *, drop_determiners: bool = True, min_freq: int = 1) -> Iterable[Span]:

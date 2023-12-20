@@ -13,9 +13,6 @@ from collections.abc import Callable, Collection, Iterable
 from typing import (
     Any,
     Literal,
-    Optional,
-    Type,
-    Union,
     cast,
 )
 
@@ -168,7 +165,7 @@ def to_bytes(s: types.AnyStr, *, encoding: str = "utf-8", errors: str = "strict"
     elif isinstance(s, bytes):
         return s
     else:
-        raise TypeError(errors_.type_invalid_msg("s", type(s), Union[str, bytes]))
+        raise TypeError(errors_.type_invalid_msg("s", type(s), str | bytes))
 
 
 def to_unicode(s: types.AnyStr, *, encoding: str = "utf-8", errors: str = "strict") -> str:
@@ -178,7 +175,7 @@ def to_unicode(s: types.AnyStr, *, encoding: str = "utf-8", errors: str = "stric
     elif isinstance(s, str):
         return s
     else:
-        raise TypeError(errors_.type_invalid_msg("s", type(s), Union[str, bytes]))
+        raise TypeError(errors_.type_invalid_msg("s", type(s), str | bytes))
 
 
 def to_path(path: types.PathLike) -> pathlib.Path:
@@ -196,7 +193,7 @@ def to_path(path: types.PathLike) -> pathlib.Path:
     elif isinstance(path, pathlib.Path):
         return path
     else:
-        raise TypeError(errors_.type_invalid_msg("path", type(path), Union[str, pathlib.Path]))
+        raise TypeError(errors_.type_invalid_msg("path", type(path), str | pathlib.Path))
 
 
 def validate_set_members(

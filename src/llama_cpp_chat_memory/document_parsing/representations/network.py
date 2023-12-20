@@ -13,7 +13,7 @@ import itertools
 import logging
 from collections.abc import Collection, Sequence
 from operator import itemgetter
-from typing import Any, Literal, Optional, Union
+from typing import Any, Literal, Union
 
 import networkx as nx
 import numpy as np
@@ -123,7 +123,7 @@ def build_cooccurrence_network(
     elif isinstance(data[0], Sequence) and isinstance(data[0][0], str):
         windows = itertoolz.concat(itertoolz.sliding_window(min(window_size, len(subseq)), subseq) for subseq in data)
     else:
-        raise TypeError(errors.type_invalid_msg("data", data, Union[Sequence[str], Sequence[Sequence[str]]]))
+        raise TypeError(errors.type_invalid_msg("data", data, Sequence[str] | Sequence[Sequence[str]]))
 
     graph = nx.Graph()
     if edge_weighting == "count":
@@ -222,7 +222,7 @@ def build_similarity_network(
         # nx graph nodes need to be *hashable*, so Sequence => Tuple
         ele_pairs = ((tuple(ele1), tuple(ele2)) for ele1, ele2 in itertools.combinations(data, 2))
     else:
-        raise TypeError(errors.type_invalid_msg("data", data, Union[Sequence[str], Sequence[Sequence[str]]]))
+        raise TypeError(errors.type_invalid_msg("data", data, Sequence[str] | Sequence[Sequence[str]]))
 
     graph = nx.Graph()
     graph.add_edges_from((ele1, ele2, {"weight": sim_func(ele1, ele2)}) for ele1, ele2 in ele_pairs)

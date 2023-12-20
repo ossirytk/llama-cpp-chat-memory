@@ -6,7 +6,6 @@ import math
 from collections import Counter
 from collections.abc import Callable, Collection
 from operator import itemgetter
-from typing import Optional
 
 import networkx as nx
 from document_parsing.extract import utils as ext_utils
@@ -20,6 +19,9 @@ except AttributeError:
 
 
 Candidate = collections.namedtuple("Candidate", ["text", "idx", "length", "count"])
+TOPN_MIN = 0.0
+TOPN_MAX = 1.0
+MIN_WINDOW_SIZE = 2
 
 
 def sgrank(
@@ -70,18 +72,18 @@ def sgrank(
     # validate / transform args
     ngrams: tuple[int, ...] = utils.to_tuple(ngrams)
     include_pos: set[str] | None = utils.to_set(include_pos) if include_pos else None
-    if window_size < 2:
+    if window_size < MIN_WINDOW_SIZE:
         msg = "`window_size` must be >= 2"
         raise ValueError(msg)
     if isinstance(topn, float):
-        if not 0.0 < topn <= 1.0:
+        if not TOPN_MIN < topn <= TOPN_MAX:
             msg = "`topn` must be an int, or a float between 0.0 and 1.0"
             raise ValueError(msg)
 
     n_toks = len(doc)
     window_size = min(n_toks, window_size)
     # bail out on (nearly) empty docs
-    if n_toks < 2:
+    if n_toks < MIN_WINDOW_SIZE:
         return []
 
     candidates, candidate_counts = _get_candidates(doc, normalize, ngrams, include_pos)
@@ -121,7 +123,7 @@ def _get_candidates(
     cand_counts = collections.Counter(cand_texts)
     candidates = [
         Candidate(text=ctext, idx=ctup[0].i, length=len(ctup), count=cand_counts[ctext])
-        for ctup, ctext in zip(cand_tuples, cand_texts)
+        for ctup, ctext in zip(cand_tuples, cand_texts, strict=True)
     ]
     if min_term_freq > 1:
         candidates = [candidate for candidate in candidates if candidate.count >= min_term_freq]

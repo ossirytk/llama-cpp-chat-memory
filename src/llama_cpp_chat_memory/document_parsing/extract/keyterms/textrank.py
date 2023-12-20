@@ -3,12 +3,14 @@ from __future__ import annotations
 import collections
 from collections.abc import Callable, Collection
 from operator import itemgetter
-from typing import Optional
 
 from document_parsing import representations
 from document_parsing.extract import utils as ext_utils
 from document_parsing.utils import utils
 from spacy.tokens import Doc, Token
+
+TOPN_MIN = 0.0
+TOPN_MAX = 1.0
 
 
 def textrank(
@@ -59,7 +61,7 @@ def textrank(
           Association for Computational Linguistics.
         - Wan, Xiaojun and Jianguo Xiao. 2008. Single document keyphrase extraction
           using neighborhood knowledge. In Proceedings of the 23rd AAAI Conference
-          on Artificial Intelligence, pages 855–860.
+          on Artificial Intelligence, pages 855-860.
         - Florescu, C. and Cornelia, C. (2017). PositionRank: An Unsupervised Approach
           to Keyphrase Extraction from Scholarly Documents. In proceedings of ACL*,
           pages 1105-1115.
@@ -67,8 +69,8 @@ def textrank(
     # validate / transform args
     include_pos = utils.to_set(include_pos) if include_pos else None
     if isinstance(topn, float):
-        if not 0.0 < topn <= 1.0:
-            msg = f"topn={topn} is invalid; " "must be an int, or a float between 0.0 and 1.0"
+        if not TOPN_MIN < topn <= TOPN_MAX:
+            msg = f"topn={topn} is invalid; must be an int, or a float between 0.0 and 1.0"
             raise ValueError(msg)
 
     # bail out on empty docs
@@ -78,7 +80,7 @@ def textrank(
     word_pos: dict[str, float] | None
     if position_bias is True:
         word_pos = collections.defaultdict(float)
-        for word, norm_word in zip(doc, ext_utils.terms_to_strings(doc, normalize)):
+        for word, norm_word in zip(doc, ext_utils.terms_to_strings(doc, normalize), strict=True):
             word_pos[norm_word] += 1 / (word.i + 1)
         sum_word_pos = sum(word_pos.values())
         word_pos = {word: pos / sum_word_pos for word, pos in word_pos.items()}

@@ -8,7 +8,7 @@ import datetime
 import functools
 import json
 from collections.abc import Iterable
-from typing import Any, Optional, Union
+from typing import Any
 
 from document_parsing.io import utils as io_utils
 from document_parsing.utils import types

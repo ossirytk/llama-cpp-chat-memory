@@ -10,7 +10,7 @@ included terms and flexible weighting/normalization schemes for their values.
 Intended primarily as a simpler- and higher-level API for sparse vectorization of docs.
 """
 from collections.abc import Iterable
-from typing import Literal, Optional
+from typing import Literal
 
 import scipy.sparse as sp
 from document_parsing.representations import vectorizers

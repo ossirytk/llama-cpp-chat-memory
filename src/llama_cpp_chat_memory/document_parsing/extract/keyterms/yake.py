@@ -6,12 +6,14 @@ import math
 import operator
 import statistics
 from collections.abc import Collection, Iterable
-from typing import Optional
 
 from cytoolz import itertoolz
 from document_parsing.extract import utils as ext_utils
 from document_parsing.utils import errors, utils
 from spacy.tokens import Doc, Token
+
+TOPN_MIN = 0.0
+TOPN_MAX = 1.0
 
 
 def yake(
@@ -64,8 +66,8 @@ def yake(
     ngrams: tuple[int, ...] = utils.to_tuple(ngrams)
     include_pos: set[str] | None = utils.to_set(include_pos) if include_pos else None
     if isinstance(topn, float):
-        if not 0.0 < topn <= 1.0:
-            msg = f"topn = {topn} is invalid; " "must be an int, or a float between 0.0 and 1.0"
+        if not TOPN_MIN < topn <= TOPN_MAX:
+            msg = f"topn = {topn} is invalid; must be an int, or a float between 0.0 and 1.0"
             raise ValueError(msg)
 
     # bail out on empty docs

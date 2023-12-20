@@ -8,9 +8,10 @@ using spaCy's built-in matcher or regular expressions.
 from __future__ import annotations
 
 import re
+from ast import literal_eval
 from collections.abc import Callable, Iterable
 from re import Pattern
-from typing import Literal, Optional, Union
+from typing import Literal
 
 from document_parsing.utils import constants, errors, types
 from spacy.matcher import Matcher
@@ -89,7 +90,7 @@ def token_matches(
                 errors.type_invalid_msg(
                     "patterns",
                     type(patterns),
-                    Union[str, list[str], list[dict[str, str]], list[list[dict[str, str]]]],
+                    str | list[str] | list[dict[str, str]] | list[list[dict[str, str]]],
                 )
             )
     else:
@@ -97,7 +98,7 @@ def token_matches(
             errors.type_invalid_msg(
                 "patterns",
                 type(patterns),
-                Union[str, list[str], list[dict[str, str]], list[list[dict[str, str]]]],
+                str | list[str] | list[dict[str, str]] | list[list[dict[str, str]]],
             )
         )
     matcher = Matcher(doclike.vocab)
@@ -116,7 +117,7 @@ def _make_pattern_from_string(patstr: str) -> list[dict[str, str]]:
                 # handle special bool and int attribute values
                 special_val = constants.RE_MATCHER_SPECIAL_VAL.match(attr_val)
                 if special_val:
-                    attr_val = eval(special_val.group(0))
+                    attr_val = literal_eval(special_val.group(0))
                 tokpat = {attr: attr_val}
             # handle wildcard tokens
             else:
@@ -138,9 +139,7 @@ def _make_pattern_from_string(patstr: str) -> list[dict[str, str]]:
                 "a corresponding value, and an optional quantity qualifier, "
                 "delimited by colons, like attr:value:op"
             )
-            raise ValueError(
-                msg
-            )
+            raise ValueError(msg)
     return pattern
 
 

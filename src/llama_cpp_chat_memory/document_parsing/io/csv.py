@@ -7,7 +7,7 @@ from __future__ import annotations
 
 import csv
 from collections.abc import Iterable, Iterator, Sequence
-from typing import Any, Optional, Type, Union
+from typing import Any
 
 from document_parsing.io import utils as io_utils
 from document_parsing.utils import types

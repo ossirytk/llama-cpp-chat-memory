@@ -7,7 +7,6 @@ from __future__ import annotations
 import functools
 import logging
 import pathlib
-from typing import Optional
 
 import spacy
 from cachetools import cached
@@ -186,9 +185,7 @@ def _make_spacy_doc_from_doc(doc: Doc, lang: types.LangLikeInContext) -> Doc:
             f"`spacy.Vocab` used to process document ({doc.vocab}) must be the same "
             f"as that used by the `lang` pipeline ({spacy_lang.vocab})"
         )
-        raise ValueError(
-            msg
-        )
+        raise ValueError(msg)
     return doc
 
 

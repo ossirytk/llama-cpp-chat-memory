@@ -7,7 +7,6 @@ from __future__ import annotations
 import logging
 from collections.abc import Iterable
 from contextlib import closing
-from typing import Optional
 
 import requests
 from document_parsing.io import utils as io_utils
@@ -47,7 +46,7 @@ def read_http_stream(
         or unicode.
     """
     # always close the connection
-    with closing(requests.get(url, stream=True, auth=auth)) as r:
+    with closing(requests.get(url, stream=True, auth=auth, timeout=10)) as r:
         # set fallback encoding if unable to infer from headers
         if r.encoding is None:
             r.encoding = "utf-8"
@@ -102,7 +101,7 @@ def write_http_stream(
     if make_dirs is True:
         io_utils._make_dirs(filepath, mode)
     # use `closing` to ensure connection and progress bar *always* close
-    with closing(requests.get(url, stream=True, auth=auth)) as r:
+    with closing(requests.get(url, stream=True, auth=auth, timeout=10)) as r:
         LOGGER.info("downloading data from %s ...", url)
         # set fallback encoding if unable to infer from headers
         if r.encoding is None:

@@ -11,7 +11,6 @@ import functools
 import itertools
 import pathlib
 from collections.abc import Iterable
-from typing import Union
 
 from cachetools import cached
 from cachetools.keys import hashkey
@@ -113,7 +112,7 @@ def get_normalized_text(span_or_token: Span | Token) -> str:
     elif isinstance(span_or_token, Span):
         return " ".join(token.text if preserve_case(token) else token.lemma_ for token in span_or_token)
     else:
-        raise TypeError(errors.type_invalid_msg("span_or_token", type(span_or_token), Union[Span, Token]))
+        raise TypeError(errors.type_invalid_msg("span_or_token", type(span_or_token), Span | Token))
 
 
 def get_main_verbs_of_sent(sent: Span) -> list[Token]:
@@ -216,5 +215,8 @@ def get_spacy_lang_morph_labels(lang: types.LangLike) -> set[str]:
     else:
         return constants.UD_V2_MORPH_LABELS
 
-    assert isinstance(morphologizer, Morphologizer)  # type guard
+    if not isinstance(morphologizer, Morphologizer):
+        # type guard
+        error = "Expected to an instance of Morphologizer"
+        raise ValueError(error)
     return {feat_name for label in morphologizer.labels for feat_name in Morphology.feats_to_dict(label).keys()}

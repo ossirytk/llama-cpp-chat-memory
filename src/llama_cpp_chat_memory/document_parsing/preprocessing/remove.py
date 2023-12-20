@@ -10,7 +10,6 @@ from __future__ import annotations
 import re
 import unicodedata
 from collections.abc import Collection
-from typing import Optional
 
 from document_parsing import utils
 from document_parsing.preprocessing import resources

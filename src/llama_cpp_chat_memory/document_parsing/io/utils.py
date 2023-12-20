@@ -20,7 +20,7 @@ import tarfile
 import urllib
 import zipfile
 from collections.abc import Iterable
-from typing import IO, Literal, Optional
+from typing import IO, Literal
 
 from cytoolz import itertoolz
 from document_parsing.io.http import write_http_stream
@@ -148,10 +148,8 @@ def _get_file_handle(
                 msg = f"no files found in zip file '{filepath}'"
                 raise ValueError(msg)
             else:
-                msg = f"{len(zip_names)} files found in zip file '{filepath}', " "but only one file is allowed"
-                raise ValueError(
-                    msg
-                )
+                msg = f"{len(zip_names)} files found in zip file '{filepath}', but only one file is allowed"
+                raise ValueError(msg)
         else:
             valid_values = [None, "infer", *sorted(_ext_to_compression.values())]
             raise ValueError(errors_.value_invalid_msg("compression", compression, valid_values))

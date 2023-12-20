@@ -11,7 +11,6 @@ import collections
 from collections.abc import Iterable, Mapping
 from operator import attrgetter
 from re import Pattern
-from typing import Optional
 
 from cytoolz import itertoolz
 from document_parsing.extract import matches
@@ -200,14 +199,12 @@ def direct_quotations(doc: Doc) -> Iterable[DQTriple]:
     # TODO: train a model to do this instead, maybe similar to entity recognition
     try:
         _reporting_verbs = constants.REPORTING_VERBS[doc.lang_]
-    except KeyError:
+    except KeyError as err:
         msg = (
             f"direct quotation extraction is not implemented for lang='{doc.lang_}', "
             f"only {sorted(constants.REPORTING_VERBS.keys())}"
         )
-        raise ValueError(
-            msg
-        )
+        raise ValueError(msg) from err
     qtok_idxs = [tok.i for tok in doc if tok.is_quote]
     if len(qtok_idxs) % 2 != 0:
         msg = (
@@ -215,9 +212,7 @@ def direct_quotations(doc: Doc) -> Iterable[DQTriple]:
             "given the limitations of this method, it's safest to bail out "
             "rather than guess which quotation is unclosed"
         )
-        raise ValueError(
-            msg
-        )
+        raise ValueError(msg)
     qtok_pair_idxs = list(itertoolz.partition(2, qtok_idxs))
     for qtok_start_idx, qtok_end_idx in qtok_pair_idxs:
         content = doc[qtok_start_idx : qtok_end_idx + 1]

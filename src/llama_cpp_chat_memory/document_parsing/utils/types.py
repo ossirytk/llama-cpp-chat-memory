@@ -3,29 +3,23 @@
 """
 from collections.abc import Callable, Iterable
 from pathlib import Path
-from typing import Any, NamedTuple, Protocol, TypeVar, Union
+from typing import Any, NamedTuple, Protocol, TypeVar
 
 from spacy.language import Language
 from spacy.tokens import Doc, Span, Token
 
 AnyVal = TypeVar("AnyVal")
-AnyStr = Union[str, bytes]
+AnyStr = str | bytes
 
-PathLike = Union[str, Path]
+PathLike = str | Path
 
-DocLike = Union[Doc, Span]
-SpanLike = Union[Span, Token]
+DocLike = Doc | Span
+SpanLike = Span | Token
 DocLikeToSpans = Callable[[DocLike], Iterable[Span]]
-DocOrTokens = Union[Doc, Iterable[Token]]
+DocOrTokens = Doc | Iterable[Token]
 
-LangLike = Union[str, Path, Language]
-LangLikeInContext = Union[
-    PathLike,
-    Language,
-    Callable[[str], str],
-    Callable[[str], Path],
-    Callable[[str], Language],
-]
+LangLike = str | Path | Language
+LangLikeInContext = PathLike | Language | Callable[[str], str] | Callable[[str], Path] | Callable[[str], Language]
 
 
 # typed equivalent to Record = collections.namedtuple("Record", ["text", "meta"])
@@ -34,8 +28,8 @@ class Record(NamedTuple):
     meta: dict
 
 
-DocData = Union[str, Record, Doc]
-CorpusData = Union[str, Record, Doc, Iterable[str], Iterable[Record], Iterable[Doc]]
+DocData = str | Record | Doc
+CorpusData = str | Record | Doc | Iterable[str] | Iterable[Record] | Iterable[Doc]
 
 
 # typed equivalent to AugTok = collections.namedtuple("AugTok", ["text", "ws", "pos", "is_word", "syns"])

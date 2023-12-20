@@ -5,7 +5,6 @@ plain text format, either as one text per file or one text per *line* in a file.
 from __future__ import annotations
 
 from collections.abc import Iterable
-from typing import Optional, Union
 
 from document_parsing.io import utils as io_utils
 from document_parsing.utils import types

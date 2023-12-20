@@ -5,13 +5,15 @@ import itertools
 from collections import Counter
 from collections.abc import Callable, Collection, Iterable
 from operator import itemgetter
-from typing import Optional
 
 import networkx as nx
 from cytoolz import itertoolz
 from document_parsing import utils
 from document_parsing.extract import utils as ext_utils
 from spacy.tokens import Doc, Token
+
+TOPN_MIN = 0.0
+TOPN_MAX = 1.0
 
 
 def scake(
@@ -50,8 +52,8 @@ def scake(
     # validate / transform args
     include_pos: set[str] | None = utils.to_set(include_pos) if include_pos else None
     if isinstance(topn, float):
-        if not 0.0 < topn <= 1.0:
-            msg = f"topn={topn} is invalid; " "must be an int, or a float between 0.0 and 1.0"
+        if not TOPN_MIN < topn <= TOPN_MAX:
+            msg = f"topn={topn} is invalid; must be an int, or a float between 0.0 and 1.0"
             raise ValueError(msg)
 
     # bail out on empty docs
@@ -63,11 +65,12 @@ def scake(
     # handle edge case where doc only has 1 sentence
     n_sents = itertoolz.count(doc.sents)
     for window_sents in itertoolz.sliding_window(min(2, n_sents), doc.sents):
+        windows_sents_placholder = window_sents
         if n_sents == 1:
-            window_sents = (window_sents[0], [])
+            windows_sents_placholder = (window_sents[0], [])
         window_words: Iterable[str] = (
             word
-            for word in itertoolz.concat(window_sents)
+            for word in itertoolz.concat(windows_sents_placholder)
             if not (word.is_stop or word.is_punct or word.is_space) and (not include_pos or word.pos_ in include_pos)
         )
         window_words = ext_utils.terms_to_strings(window_words, normalize)
@@ -120,7 +123,7 @@ def _compute_word_scores(
     }
     # "positional weight" component
     word_pos = collections.defaultdict(float)
-    for word, word_str in zip(doc, ext_utils.terms_to_strings(doc, normalize)):
+    for word, word_str in zip(doc, ext_utils.terms_to_strings(doc, normalize), strict=True):
         word_pos[word_str] += 1 / (word.i + 1)
     return {w: word_pos[w] * max_truss_levels[w] * sem_strengths[w] * sem_connectivities[w] for w in word_strs}
 

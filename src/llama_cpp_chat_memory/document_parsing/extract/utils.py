@@ -10,7 +10,6 @@ import itertools
 import operator
 import re
 from collections.abc import Callable, Collection, Iterable
-from typing import Optional
 
 from cytoolz import itertoolz
 from document_parsing.extract import matches

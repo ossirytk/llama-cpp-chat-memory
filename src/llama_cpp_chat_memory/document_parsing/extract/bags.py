@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import operator
 from collections.abc import Collection
-from typing import Any, Literal, Optional, Union
+from typing import Any, Literal
 
 import cytoolz
 from document_parsing.extract import basics
@@ -10,7 +10,7 @@ from document_parsing.utils import errors, types
 
 WeightingType = Literal["count", "freq", "binary"]
 SpanGroupByType = Literal["lemma", "lemma_", "lower", "lower_", "orth", "orth_"]
-TokenGroupByType = Union[SpanGroupByType, Literal["norm", "norm_"]]
+TokenGroupByType = SpanGroupByType | Literal["norm", "norm_"]
 
 
 def to_bag_of_words(

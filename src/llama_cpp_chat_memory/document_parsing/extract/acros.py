@@ -10,11 +10,13 @@ from __future__ import annotations
 import collections
 from collections.abc import Iterable
 from operator import itemgetter
-from typing import Optional
 
 import numpy as np
 from document_parsing.utils import constants, types
 from spacy.tokens import Span, Token
+
+ACRONYM_MIN_ALPHANUMERIC = 2
+ACRONYM_MAX_SIZE = 10
 
 
 def acronyms(doclike: types.DocLike) -> Iterable[Token]:
@@ -148,14 +150,14 @@ def _get_acronym_definition(
         International Journal on Document Analysis and Recognition 1.4 (1999): 191-198.
     """
 
-    def build_lcs_matrix(X, Y):
-        m = len(X)
-        n = len(Y)
+    def build_lcs_matrix(x, y):
+        m = len(x)
+        n = len(y)
         b = np.zeros((m, n), dtype=int)
         c = np.zeros((m, n), dtype=int)
         for i in range(0, m):
             for j in range(0, n):
-                if X[i] == Y[j]:
+                if x[i] == y[j]:
                     c[i, j] = c[i - 1, j - 1] + 1
                     b[i, j] = 1
                 elif c[i - 1, j] >= c[i, j - 1]:
@@ -197,31 +199,31 @@ def _get_acronym_definition(
                 vv["misses"] += 1
         return vv
 
-    def compare_vectors(A, B, types):
-        vv_A = vector_values(A, types)
-        vv_B = vector_values(B, types)
+    def compare_vectors(a, b, types):
+        vv_a = vector_values(a, types)
+        vv_b = vector_values(b, types)
         # no one-letter matches, sorryboutit
-        if vv_A["size"] == 1:
-            return B
-        elif vv_B["size"] == 1:
-            return A
-        if vv_A["misses"] > vv_B["misses"]:
-            return B
-        elif vv_A["misses"] < vv_B["misses"]:
-            return A
-        if vv_A["stop_count"] > vv_B["stop_count"]:
-            return B
-        if vv_A["stop_count"] < vv_B["stop_count"]:
-            return A
-        if vv_A["distance"] > vv_B["distance"]:
-            return B
-        elif vv_A["distance"] < vv_B["distance"]:
-            return A
-        if vv_A["size"] > vv_B["size"]:
-            return B
-        elif vv_A["size"] < vv_B["size"]:
-            return A
-        return A
+        if vv_a["size"] == 1:
+            return b
+        elif vv_b["size"] == 1:
+            return a
+        if vv_a["misses"] > vv_b["misses"]:
+            return b
+        elif vv_a["misses"] < vv_b["misses"]:
+            return a
+        if vv_a["stop_count"] > vv_b["stop_count"]:
+            return b
+        if vv_a["stop_count"] < vv_b["stop_count"]:
+            return a
+        if vv_a["distance"] > vv_b["distance"]:
+            return b
+        elif vv_a["distance"] < vv_b["distance"]:
+            return a
+        if vv_a["size"] > vv_b["size"]:
+            return b
+        elif vv_a["size"] < vv_b["size"]:
+            return a
+        return a
 
     # get definition window's leading characters and word types
     def_leads = []
@@ -250,7 +252,7 @@ def _get_acronym_definition(
     acr_leads = acr_leads.replace("&", "a")
     if acr_leads.endswith("s"):
         # bail out if it's only a 2-letter acronym to start with, e.g. 'Is'
-        if len(acr_leads) == 2:
+        if len(acr_leads) == ACRONYM_MIN_ALPHANUMERIC:
             return ("", 0)
         acr_leads = acr_leads[:-1]
     acr_leads = acr_leads.lower()
@@ -305,7 +307,7 @@ def is_acronym(token: str, exclude: set[str] | None = None) -> bool:
     if " " in token:
         return False
     # 2-character acronyms can't have lower-case letters
-    if len(token) == 2 and not token.isupper():
+    if len(token) == ACRONYM_MIN_ALPHANUMERIC and not token.isupper():
         return False
     # acronyms can't be all digits
     if token.isdigit():
@@ -314,7 +316,7 @@ def is_acronym(token: str, exclude: set[str] | None = None) -> bool:
     if not any(char.isupper() for char in token) and not (token[0].isdigit() or token[-1].isdigit()):
         return False
     # acronyms must have between 2 and 10 alphanumeric characters
-    if not 2 <= sum(1 for char in token if char.isalnum()) <= 10:
+    if not ACRONYM_MIN_ALPHANUMERIC <= sum(1 for char in token if char.isalnum()) <= ACRONYM_MAX_SIZE:
         return False
     # only certain combinations of letters, digits, and '&/.-' allowed
     if not constants.RE_ACRONYM.match(token):

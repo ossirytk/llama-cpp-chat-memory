@@ -8,8 +8,6 @@ needed to transform one string into another.
 """
 from __future__ import annotations
 
-from typing import Optional
-
 import sklearn.feature_extraction
 import sklearn.metrics
 from document_parsing.utils import constants

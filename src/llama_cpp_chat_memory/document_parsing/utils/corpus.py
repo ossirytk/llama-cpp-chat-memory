@@ -12,7 +12,7 @@ import logging
 import math
 from collections import Counter
 from collections.abc import Callable, Iterable
-from typing import Any, Literal, Optional, Union
+from typing import Any, Literal
 
 import numpy as np
 import spacy
@@ -176,7 +176,7 @@ class Corpus:
             idxs = range(start, end, step)
             self._remove_many_docs_by_index(idxs)
         else:
-            raise TypeError(errors.type_invalid_msg("idx_or_slice", type(idx_or_slice), Union[int, slice]))
+            raise TypeError(errors.type_invalid_msg("idx_or_slice", type(idx_or_slice), int | slice))
 
     # add documents
 
