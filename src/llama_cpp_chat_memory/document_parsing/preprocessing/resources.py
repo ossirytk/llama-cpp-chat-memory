@@ -98,7 +98,7 @@ RE_SHORT_URL: Pattern = re.compile(
 # fmt: on
 
 RE_EMAIL: Pattern = re.compile(
-    r"(?:mailto:)?" r"(?:^|(?<=[^\w@.)]))([\w+-](\.(?!\.))?)*?[\w+-]@(?:\w-?)*?\w+(\.([a-z]{2,})){1,3}" r"(?:$|(?=\b))",
+    r"(?:mailto:)?(?:^|(?<=[^\w@.)]))([\w+-](\.(?!\.))?)*?[\w+-]@(?:\w-?)*?\w+(\.([a-z]{2,})){1,3}(?:$|(?=\b))",
     flags=re.IGNORECASE,
 )
 

@@ -13,7 +13,7 @@ from custom_llm_classes.custom_spacy_embeddings import CustomSpacyEmbeddings
 from dotenv import find_dotenv, load_dotenv
 from langchain.embeddings import HuggingFaceEmbeddings, LlamaCppEmbeddings
 from langchain.llms import LlamaCpp
-from langchain.prompts import PromptTemplate, load_prompt
+from langchain.prompts import load_prompt
 from langchain.vectorstores import Chroma
 from PIL import Image
 
