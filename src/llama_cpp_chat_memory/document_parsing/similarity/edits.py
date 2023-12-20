@@ -18,7 +18,7 @@ from jellyfish import jaro_similarity as _jaro_similarity
 from jellyfish import levenshtein_distance as _levenshtein
 
 
-def _shortcut(str1: str, str2: str) -> Optional[float]:
+def _shortcut(str1: str, str2: str) -> float | None:
     if not str1 and not str2:
         return 0.0
     elif str1 == str2:

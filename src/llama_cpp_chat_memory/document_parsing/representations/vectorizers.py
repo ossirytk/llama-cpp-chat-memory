@@ -20,7 +20,8 @@ import collections
 import collections.abc
 import operator
 from array import array
-from typing import DefaultDict, Iterable, Literal, Optional, Union
+from collections.abc import Iterable
+from typing import DefaultDict, Literal, Optional, Union
 
 import numpy as np
 import scipy.sparse as sp
@@ -255,19 +256,21 @@ class Vectorizer:
         self,
         *,
         tf_type: Literal["linear", "sqrt", "log", "binary"] = "linear",
-        idf_type: Optional[Literal["standard", "smooth", "bm25"]] = None,
-        dl_type: Optional[Literal["linear", "sqrt", "log"]] = None,
-        norm: Optional[Literal["l1", "l2"]] = None,
+        idf_type: Literal["standard", "smooth", "bm25"] | None = None,
+        dl_type: Literal["linear", "sqrt", "log"] | None = None,
+        norm: Literal["l1", "l2"] | None = None,
         min_df: int | float = 1,
         max_df: int | float = 1.0,
-        max_n_terms: Optional[int] = None,
-        vocabulary_terms: Optional[dict[str, int] | Iterable[str]] = None,
+        max_n_terms: int | None = None,
+        vocabulary_terms: dict[str, int] | Iterable[str] | None = None,
     ):
         # sanity check numeric arguments
         if min_df < 0 or max_df < 0:
-            raise ValueError("`min_df` and `max_df` must be positive numbers or None")
+            msg = "`min_df` and `max_df` must be positive numbers or None"
+            raise ValueError(msg)
         if max_n_terms and max_n_terms < 0:
-            raise ValueError("`max_n_terms` must be a positive integer or None")
+            msg = "`max_n_terms` must be a positive integer or None"
+            raise ValueError(msg)
         self.tf_type = tf_type
         self.idf_type = idf_type
         self.dl_type = dl_type
@@ -292,8 +295,9 @@ class Vectorizer:
                 vocab: dict[str, int] = {}
                 for i, term in enumerate(sorted(vocabulary)):
                     if vocab.setdefault(term, i) != i:
+                        msg = f"Terms in `vocabulary` must be unique, but '{term}' " "was found more than once."
                         raise ValueError(
-                            f"Terms in `vocabulary` must be unique, but '{term}' " "was found more than once."
+                            msg
                         )
                 vocabulary = vocab
             else:
@@ -301,19 +305,26 @@ class Vectorizer:
                 if len(ids) != len(vocabulary):
                     counts = collections.Counter(vocabulary.values())
                     n_dupe_term_ids = sum(1 for term_id, term_id_count in counts.items() if term_id_count > 1)
-                    raise ValueError(
+                    msg = (
                         "Term ids in `vocabulary` must be unique, but "
                         f"{n_dupe_term_ids} ids were assigned to more than one term."
                     )
+                    raise ValueError(
+                        msg
+                    )
                 for i in range(len(vocabulary)):
                     if i not in ids:
-                        raise ValueError(
+                        msg = (
                             "Term ids in `vocabulary` must be compact, i.e. "
                             f"not have any gaps, but term id {i} is missing from "
                             f"a vocabulary of {len(vocabulary)} terms"
                         )
+                        raise ValueError(
+                            msg
+                        )
             if not vocabulary:
-                raise ValueError("`vocabulary` must not be empty.")
+                msg = "`vocabulary` must not be empty."
+                raise ValueError(msg)
             is_fixed = True
         else:
             is_fixed = False
@@ -325,9 +336,11 @@ class Vectorizer:
         if not, raise a ValueError.
         """
         if not isinstance(self.vocabulary_terms, collections.abc.Mapping):
-            raise ValueError("vocabulary hasn't been built; call `Vectorizer.fit()`")
+            msg = "vocabulary hasn't been built; call `Vectorizer.fit()`"
+            raise ValueError(msg)
         if len(self.vocabulary_terms) == 0:
-            raise ValueError("vocabulary is empty")
+            msg = "vocabulary is empty"
+            raise ValueError(msg)
 
     @property
     def id_to_term(self) -> dict[int, str]:
@@ -578,9 +591,9 @@ class Vectorizer:
             new_idx_array[new_idx] = old_idx
             vocabulary[term] = new_idx
         # use fancy indexing to reorder rows or columns
-        if axis == "rows" or axis == 0:
+        if axis in ("rows", 0):
             return matrix[new_idx_array, :]
-        elif axis == "columns" or axis == 1:
+        elif axis in ("columns", 1):
             return matrix[:, new_idx_array]
         else:
             raise ValueError(errors.value_invalid_msg("axis", axis, {"rows", "columns", 0, 1}))
@@ -822,14 +835,14 @@ class GroupVectorizer(Vectorizer):
         self,
         *,
         tf_type: Literal["linear", "sqrt", "log", "binary"] = "linear",
-        idf_type: Optional[Literal["standard", "smooth", "bm25"]] = None,
-        dl_type: Optional[Literal["linear", "sqrt", "log"]] = None,
-        norm: Optional[Literal["l1", "l2"]] = None,
+        idf_type: Literal["standard", "smooth", "bm25"] | None = None,
+        dl_type: Literal["linear", "sqrt", "log"] | None = None,
+        norm: Literal["l1", "l2"] | None = None,
         min_df: int | float = 1,
         max_df: int | float = 1.0,
-        max_n_terms: Optional[int] = None,
-        vocabulary_terms: Optional[dict[str, int] | Iterable[str]] = None,
-        vocabulary_grps: Optional[dict[str, int] | Iterable[str]] = None,
+        max_n_terms: int | None = None,
+        vocabulary_terms: dict[str, int] | Iterable[str] | None = None,
+        vocabulary_grps: dict[str, int] | Iterable[str] | None = None,
     ):
         super().__init__(
             tf_type=tf_type,
@@ -1040,7 +1053,7 @@ class GroupVectorizer(Vectorizer):
         # TODO: can we adapt the optimization from `Vectorizer._count_terms()` here?
         if fixed_vocab_terms is False:
             # add a new value when a new term is seen
-            vocabulary_terms: Union[dict, DefaultDict] = collections.defaultdict()
+            vocabulary_terms: dict | collections.defaultdict = collections.defaultdict()
             vocabulary_terms.default_factory = vocabulary_terms.__len__
         else:
             vocabulary_terms = self.vocabulary_terms

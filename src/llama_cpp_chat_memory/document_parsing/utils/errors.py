@@ -1,7 +1,8 @@
 """
 :mod:`textacy.errors`: Helper functions for making consistent errors.
 """
-from typing import Any, Collection
+from collections.abc import Collection
+from typing import Any
 
 
 def value_invalid_msg(name: str, value: Any, valid_values: Collection[Any]) -> str:

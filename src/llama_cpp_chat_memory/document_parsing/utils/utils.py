@@ -9,11 +9,9 @@ import logging
 import pathlib
 import sys
 import warnings
+from collections.abc import Callable, Collection, Iterable
 from typing import (
     Any,
-    Callable,
-    Collection,
-    Iterable,
     Literal,
     Optional,
     Type,
@@ -64,7 +62,7 @@ def get_config() -> dict[str, Any]:
     from spacy.about import __version__ as spacy_version
     from spacy.util import get_installed_models
 
-    from ._version import __version__ as textacy_version
+    from src.llama_cpp_chat_memory.document_parsing.utils._version import __version__ as textacy_version
 
     return {
         "platform": sys.platform,
@@ -103,7 +101,7 @@ def to_list(val: Any) -> list:
     """Cast ``val`` into a list, if necessary and possible."""
     if isinstance(val, list):
         return val
-    elif isinstance(val, Iterable) and not isinstance(val, (str, bytes)):
+    elif isinstance(val, Iterable) and not isinstance(val, str | bytes):
         return list(val)
     else:
         return [val]
@@ -113,7 +111,7 @@ def to_set(val: Any) -> set:
     """Cast ``val`` into a set, if necessary and possible."""
     if isinstance(val, set):
         return val
-    elif isinstance(val, Iterable) and not isinstance(val, (str, bytes)):
+    elif isinstance(val, Iterable) and not isinstance(val, str | bytes):
         return set(val)
     else:
         return {val}
@@ -123,17 +121,17 @@ def to_tuple(val: Any) -> tuple:
     """Cast ``val`` into a tuple, if necessary and possible."""
     if isinstance(val, tuple):
         return val
-    elif isinstance(val, Iterable) and not isinstance(val, (str, bytes)):
+    elif isinstance(val, Iterable) and not isinstance(val, str | bytes):
         return tuple(val)
     else:
         return (val,)
 
 
 def to_collection(
-    val: Optional[types.AnyVal | Collection[types.AnyVal]],
+    val: types.AnyVal | Collection[types.AnyVal] | None,
     val_type: type[Any] | tuple[type[Any], ...],
     col_type: type[Any],
-) -> Optional[Collection[types.AnyVal]]:
+) -> Collection[types.AnyVal] | None:
     """
     Validate and cast a value or values to a collection.
 
@@ -152,13 +150,15 @@ def to_collection(
         return None
     if isinstance(val, val_type):
         return col_type([val])
-    elif isinstance(val, (tuple, list, set, frozenset)):
+    elif isinstance(val, tuple | list | set | frozenset):
         if not all(isinstance(v, val_type) for v in val):
-            raise TypeError(f"not all values are of type {val_type}")
+            msg = f"not all values are of type {val_type}"
+            raise TypeError(msg)
         return col_type(val)
     else:
         # TODO: use standard error message, maybe?
-        raise TypeError(f"values must be {val_type} or a collection thereof, not {type(val)}")
+        msg = f"values must be {val_type} or a collection thereof, not {type(val)}"
+        raise TypeError(msg)
 
 
 def to_bytes(s: types.AnyStr, *, encoding: str = "utf-8", errors: str = "strict") -> bytes:
@@ -202,7 +202,7 @@ def to_path(path: types.PathLike) -> pathlib.Path:
 def validate_set_members(
     vals: types.AnyVal | set[types.AnyVal],
     val_type: type[Any] | tuple[type[Any], ...],
-    valid_vals: Optional[set[types.AnyVal]] = None,
+    valid_vals: set[types.AnyVal] | None = None,
 ) -> set[types.AnyVal]:
     """
     Validate values that must be of a certain type and (optionally) found among
@@ -225,14 +225,15 @@ def validate_set_members(
         if not isinstance(valid_vals, set):
             valid_vals = set(valid_vals)
         if not all(val in valid_vals for val in vals):
-            raise ValueError(f"values {vals.difference(valid_vals)} are invalid; valid values are {valid_vals}")
+            msg = f"values {vals.difference(valid_vals)} are invalid; valid values are {valid_vals}"
+            raise ValueError(msg)
     return vals
 
 
 def validate_and_clip_range(
     range_vals: tuple[types.AnyVal, types.AnyVal],
     full_range: tuple[types.AnyVal, types.AnyVal],
-    val_type: Optional[type[Any] | tuple[type[Any], ...]] = None,
+    val_type: type[Any] | tuple[type[Any], ...] | None = None,
 ) -> tuple[types.AnyVal, types.AnyVal]:
     """
     Validate and clip range values.
@@ -255,15 +256,18 @@ def validate_and_clip_range(
         ValueError
     """
     for range_ in (range_vals, full_range):
-        if not isinstance(range_, (list, tuple)):
-            raise TypeError(f"range must be of type {({list, tuple})}, not {type(range_)}")
+        if not isinstance(range_, list | tuple):
+            msg = f"range must be of type {({list, tuple})}, not {type(range_)}"
+            raise TypeError(msg)
         if len(range_) != 2:
-            raise ValueError(f"range must have 2 items -- (start, end) -- not {len(range_)}")
+            msg = f"range must have 2 items -- (start, end) -- not {len(range_)}"
+            raise ValueError(msg)
     if val_type:
         for range_ in (range_vals, full_range):
             for val in range_:
                 if val is not None and not isinstance(val, val_type):
-                    raise TypeError(f"range value={val} must be of type {val_type}, not {type(val)}")
+                    msg = f"range value={val} must be of type {val_type}, not {type(val)}"
+                    raise TypeError(msg)
     if range_vals[0] is None:
         range_vals = (full_range[0], range_vals[1])
     elif range_vals[0] < full_range[0]:  # type: ignore

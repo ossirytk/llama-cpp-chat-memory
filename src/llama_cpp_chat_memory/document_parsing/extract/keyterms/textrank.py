@@ -1,8 +1,9 @@
 from __future__ import annotations
 
 import collections
+from collections.abc import Callable, Collection
 from operator import itemgetter
-from typing import Callable, Collection, Optional
+from typing import Optional
 
 from document_parsing import representations
 from document_parsing.extract import utils as ext_utils
@@ -13,8 +14,8 @@ from spacy.tokens import Doc, Token
 def textrank(
     doc: Doc,
     *,
-    normalize: Optional[str | Callable[[Token], str]] = "lemma",
-    include_pos: Optional[str | Collection[str]] = ("NOUN", "PROPN", "ADJ"),
+    normalize: str | Callable[[Token], str] | None = "lemma",
+    include_pos: str | Collection[str] | None = ("NOUN", "PROPN", "ADJ"),
     window_size: int = 2,
     edge_weighting: str = "binary",
     position_bias: bool = False,
@@ -67,13 +68,14 @@ def textrank(
     include_pos = utils.to_set(include_pos) if include_pos else None
     if isinstance(topn, float):
         if not 0.0 < topn <= 1.0:
-            raise ValueError(f"topn={topn} is invalid; " "must be an int, or a float between 0.0 and 1.0")
+            msg = f"topn={topn} is invalid; " "must be an int, or a float between 0.0 and 1.0"
+            raise ValueError(msg)
 
     # bail out on empty docs
     if not doc:
         return []
 
-    word_pos: Optional[dict[str, float]]
+    word_pos: dict[str, float] | None
     if position_bias is True:
         word_pos = collections.defaultdict(float)
         for word, norm_word in zip(doc, ext_utils.terms_to_strings(doc, normalize)):
@@ -103,8 +105,8 @@ def textrank(
 
 def _get_candidates(
     doc: Doc,
-    normalize: Optional[str | Callable],
-    include_pos: Optional[set[str]],
+    normalize: str | Callable | None,
+    include_pos: set[str] | None,
 ) -> set[tuple[str, ...]]:
     """
     Get a set of candidate terms to be scored by joining the longest

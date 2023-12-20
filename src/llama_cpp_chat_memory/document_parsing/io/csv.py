@@ -6,7 +6,8 @@ other valid one-char delimiters.
 from __future__ import annotations
 
 import csv
-from typing import Any, Iterable, Iterator, Optional, Sequence, Type, Union
+from collections.abc import Iterable, Iterator, Sequence
+from typing import Any, Optional, Type, Union
 
 from document_parsing.io import utils as io_utils
 from document_parsing.utils import types
@@ -15,8 +16,8 @@ from document_parsing.utils import types
 def read_csv(
     filepath: types.PathLike,
     *,
-    encoding: Optional[str] = None,
-    fieldnames: Optional[str | Sequence[str]] = None,
+    encoding: str | None = None,
+    fieldnames: str | Sequence[str] | None = None,
     dialect: str | type[csv.Dialect] = "excel",
     delimiter: str = ",",
     quoting: int = csv.QUOTE_NONNUMERIC,
@@ -69,7 +70,7 @@ def read_csv(
             if fieldnames == "infer":
                 has_header = sniffer.has_header(sample)
             f.seek(0)
-        csv_reader: Union[csv.DictReader, Iterator]
+        csv_reader: csv.DictReader | Iterator
         if has_header is True:
             csv_reader = csv.DictReader(
                 f,
@@ -98,17 +99,16 @@ def read_csv(
                 delimiter=delimiter,
                 quoting=quoting,
             )
-        for row in csv_reader:
-            yield row
+        yield from csv_reader
 
 
 def write_csv(
     data: Iterable[dict[str, Any]] | Iterable[Iterable],
     filepath: types.PathLike,
     *,
-    encoding: Optional[str] = None,
+    encoding: str | None = None,
     make_dirs: bool = False,
-    fieldnames: Optional[Sequence[str]] = None,
+    fieldnames: Sequence[str] | None = None,
     dialect: str = "excel",
     delimiter: str = ",",
     quoting: int = csv.QUOTE_NONNUMERIC,
@@ -153,7 +153,7 @@ def write_csv(
         https://docs.python.org/3/library/csv.html#csv.writer
     """
     with io_utils.open_sesame(filepath, mode="wt", newline="", encoding=encoding, make_dirs=make_dirs) as f:
-        csv_writer: Union[csv.DictWriter, Any]
+        csv_writer: csv.DictWriter | Any
         if fieldnames:
             csv_writer = csv.DictWriter(
                 f,

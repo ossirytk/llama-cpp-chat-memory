@@ -2,8 +2,10 @@ from __future__ import annotations
 
 import collections
 import itertools
+from collections import Counter
+from collections.abc import Callable, Collection, Iterable
 from operator import itemgetter
-from typing import Callable, Collection, Counter, Iterable, Optional
+from typing import Optional
 
 import networkx as nx
 from cytoolz import itertoolz
@@ -15,8 +17,8 @@ from spacy.tokens import Doc, Token
 def scake(
     doc: Doc,
     *,
-    normalize: Optional[str | Callable[[Token], str]] = "lemma",
-    include_pos: Optional[str | Collection[str]] = ("NOUN", "PROPN", "ADJ"),
+    normalize: str | Callable[[Token], str] | None = "lemma",
+    include_pos: str | Collection[str] | None = ("NOUN", "PROPN", "ADJ"),
     topn: int | float = 10,
 ) -> list[tuple[str, float]]:
     """
@@ -46,10 +48,11 @@ def scake(
         https://arxiv.org/abs/1811.10831v1
     """
     # validate / transform args
-    include_pos: Optional[set[str]] = utils.to_set(include_pos) if include_pos else None
+    include_pos: set[str] | None = utils.to_set(include_pos) if include_pos else None
     if isinstance(topn, float):
         if not 0.0 < topn <= 1.0:
-            raise ValueError(f"topn={topn} is invalid; " "must be an int, or a float between 0.0 and 1.0")
+            msg = f"topn={topn} is invalid; " "must be an int, or a float between 0.0 and 1.0"
+            raise ValueError(msg)
 
     # bail out on empty docs
     if not doc:
@@ -96,7 +99,7 @@ def _compute_word_scores(
     doc: Doc,
     graph: nx.Graph,
     cooc_mat: dict[tuple[str, str], int],
-    normalize: Optional[str | Callable[[Token], str]],
+    normalize: str | Callable[[Token], str] | None,
 ) -> dict[str, float]:
     word_strs: list[str] = list(graph.nodes())
     # "level of hierarchy" component
@@ -113,7 +116,7 @@ def _compute_word_scores(
     }
     # "semantic connectivity" component
     sem_connectivities = {
-        w: len(set(max_truss_levels[nbr] for nbr in graph.neighbors(w))) / max_truss_level for w in word_strs
+        w: len({max_truss_levels[nbr] for nbr in graph.neighbors(w)}) / max_truss_level for w in word_strs
     }
     # "positional weight" component
     word_pos = collections.defaultdict(float)
@@ -124,8 +127,8 @@ def _compute_word_scores(
 
 def _get_candidates(
     doc: Doc,
-    normalize: Optional[str | Callable[[Token], str]],
-    include_pos: Optional[set[str]],
+    normalize: str | Callable[[Token], str] | None,
+    include_pos: set[str] | None,
 ) -> set[tuple[str, ...]]:
     """
     Get a set of candidate terms to be scored by joining the longest

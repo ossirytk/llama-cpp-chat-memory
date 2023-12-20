@@ -8,7 +8,8 @@ a text document using regular expressions.
 from __future__ import annotations
 
 import re
-from typing import Iterable, Pattern
+from collections.abc import Iterable
+from re import Pattern
 
 from spacy.tokens import Doc
 

@@ -38,7 +38,8 @@ def get_term_freqs(
             if ``type_`` isn't one of {"linear", "sqrt", "log"}.
     """
     if doc_term_matrix.nnz == 0:
-        raise ValueError("`doc_term_matrix` must have at least 1 non-zero entry")
+        msg = "`doc_term_matrix` must have at least 1 non-zero entry"
+        raise ValueError(msg)
     tfs = np.asarray(doc_term_matrix.sum(axis=0)).ravel()
     if type_ == "linear":
         return tfs  # tfs is already linear
@@ -69,7 +70,8 @@ def get_doc_freqs(doc_term_matrix: sp.csr_matrix) -> np.ndarray:
         ValueError: if ``doc_term_matrix`` doesn't have any non-zero entries.
     """
     if doc_term_matrix.nnz == 0:
-        raise ValueError("`doc_term_matrix` must have at least 1 non-zero entry")
+        msg = "`doc_term_matrix` must have at least 1 non-zero entry"
+        raise ValueError(msg)
     _, n_terms = doc_term_matrix.shape
     return np.bincount(doc_term_matrix.indices, minlength=n_terms)
 
@@ -211,7 +213,7 @@ def filter_terms_by_df(
     *,
     min_df: float | int = 1,
     max_df: float | int = 1.0,
-    max_n_terms: Optional[int] = None,
+    max_n_terms: int | None = None,
 ) -> tuple[sp.csr_matrix, dict[str, int]]:
     """
     Filter out terms that are too common and/or too rare (by document frequency),
@@ -245,13 +247,15 @@ def filter_terms_by_df(
     if max_df == 1.0 and min_df == 1 and max_n_terms is None:
         return doc_term_matrix, term_to_id
     if max_df < 0 or min_df < 0 or (max_n_terms is not None and max_n_terms < 0):
-        raise ValueError("max_df, min_df, and max_n_terms may not be negative")
+        msg = "max_df, min_df, and max_n_terms may not be negative"
+        raise ValueError(msg)
 
     n_docs, n_terms = doc_term_matrix.shape
     max_doc_count = max_df if isinstance(max_df, int) else int(max_df * n_docs)
     min_doc_count = min_df if isinstance(min_df, int) else int(min_df * n_docs)
     if max_doc_count < min_doc_count:
-        raise ValueError("max_df corresponds to fewer documents than min_df")
+        msg = "max_df corresponds to fewer documents than min_df"
+        raise ValueError(msg)
 
     # calculate a mask based on document frequencies
     dfs = get_doc_freqs(doc_term_matrix)
@@ -273,7 +277,8 @@ def filter_terms_by_df(
 
     kept_indices = np.where(mask)[0]
     if len(kept_indices) == 0:
-        raise ValueError("After filtering, no terms remain; try a lower `min_df` or higher `max_df`")
+        msg = "After filtering, no terms remain; try a lower `min_df` or higher `max_df`"
+        raise ValueError(msg)
 
     return (doc_term_matrix[:, kept_indices], term_to_id)
 
@@ -283,7 +288,7 @@ def filter_terms_by_ic(
     term_to_id: dict[str, int],
     *,
     min_ic: float = 0.0,
-    max_n_terms: Optional[int] = None,
+    max_n_terms: int | None = None,
 ) -> tuple[sp.csr_matrix, dict[str, int]]:
     """
     Filter out terms that are too common and/or too rare (by information content),
@@ -313,9 +318,11 @@ def filter_terms_by_ic(
     if min_ic == 0.0 and max_n_terms is None:
         return doc_term_matrix, term_to_id
     if min_ic < 0.0 or min_ic > 1.0:
-        raise ValueError("min_ic must be a float in [0.0, 1.0]")
+        msg = "min_ic must be a float in [0.0, 1.0]"
+        raise ValueError(msg)
     if max_n_terms is not None and max_n_terms < 0:
-        raise ValueError("max_n_terms may not be negative")
+        msg = "max_n_terms may not be negative"
+        raise ValueError(msg)
 
     _, n_terms = doc_term_matrix.shape
 
@@ -336,6 +343,7 @@ def filter_terms_by_ic(
 
     kept_indices = np.where(mask)[0]
     if len(kept_indices) == 0:
-        raise ValueError("After filtering, no terms remain; try a lower `min_ic`")
+        msg = "After filtering, no terms remain; try a lower `min_ic`"
+        raise ValueError(msg)
 
     return (doc_term_matrix[:, kept_indices], term_to_id)

@@ -5,7 +5,8 @@ import functools
 import math
 import operator
 import statistics
-from typing import Collection, Iterable, Optional
+from collections.abc import Collection, Iterable
+from typing import Optional
 
 from cytoolz import itertoolz
 from document_parsing.extract import utils as ext_utils
@@ -16,9 +17,9 @@ from spacy.tokens import Doc, Token
 def yake(
     doc: Doc,
     *,
-    normalize: Optional[str] = "lemma",
+    normalize: str | None = "lemma",
     ngrams: int | Collection[int] = (1, 2, 3),
-    include_pos: Optional[str | Collection[str]] = ("NOUN", "PROPN", "ADJ"),
+    include_pos: str | Collection[str] | None = ("NOUN", "PROPN", "ADJ"),
     window_size: int = 2,
     topn: int | float = 10,
 ) -> list[tuple[str, float]]:
@@ -61,10 +62,11 @@ def yake(
     """
     # validate / transform args
     ngrams: tuple[int, ...] = utils.to_tuple(ngrams)
-    include_pos: Optional[set[str]] = utils.to_set(include_pos) if include_pos else None
+    include_pos: set[str] | None = utils.to_set(include_pos) if include_pos else None
     if isinstance(topn, float):
         if not 0.0 < topn <= 1.0:
-            raise ValueError(f"topn = {topn} is invalid; " "must be an int, or a float between 0.0 and 1.0")
+            msg = f"topn = {topn} is invalid; " "must be an int, or a float between 0.0 and 1.0"
+            raise ValueError(msg)
 
     # bail out on empty docs
     if not doc:
@@ -123,7 +125,7 @@ def yake(
     return ext_utils.get_filtered_topn_terms(sorted_term_scores, topn, match_threshold=0.8)
 
 
-def _get_attr_name(normalize: Optional[str], as_strings: bool) -> str:
+def _get_attr_name(normalize: str | None, as_strings: bool) -> str:
     if normalize is None:
         attr_name = "orth"
     elif normalize in ("lemma", "lower", "norm"):
@@ -137,7 +139,7 @@ def _get_attr_name(normalize: Optional[str], as_strings: bool) -> str:
 
 def _get_per_word_occurrence_values(
     doc: Doc,
-    normalize: Optional[str],
+    normalize: str | None,
     stop_words: set[str],
     window_size: int,
 ) -> dict[int, dict[str, list]]:
@@ -218,7 +220,7 @@ def _compute_word_scores(
     return word_scores
 
 
-def _get_unigram_candidates(doc: Doc, include_pos: Optional[set[str]]) -> Iterable[Token]:
+def _get_unigram_candidates(doc: Doc, include_pos: set[str] | None) -> Iterable[Token]:
     candidates = (word for word in doc if not (word.is_stop or word.is_punct or word.is_space))
     if include_pos:
         candidates = (word for word in candidates if word.pos_ in include_pos)
@@ -232,7 +234,7 @@ def _score_unigram_candidates(
     term_scores: dict[str, float],
     stop_words: set[str],
     seen_candidates: set[str],
-    normalize: Optional[str],
+    normalize: str | None,
 ):
     attr_name = _get_attr_name(normalize, False)
     attr_name_str = _get_attr_name(normalize, True)
@@ -255,7 +257,7 @@ def _score_ngram_candidates(
     word_scores: dict[int, float],
     term_scores: dict[str, float],
     seen_candidates: set[str],
-    normalize: Optional[str],
+    normalize: str | None,
 ):
     attr_name = _get_attr_name(normalize, False)
     attr_name_str = _get_attr_name(normalize, True)

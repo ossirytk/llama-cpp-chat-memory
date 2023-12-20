@@ -6,7 +6,7 @@ Sequence-based Metrics
 sequence-based algorithms that identify and measure the subsequences common to each.
 """
 import difflib
-from typing import Sequence
+from collections.abc import Sequence
 
 
 def matching_subsequences_ratio(seq1: Sequence[str], seq2: Sequence[str], **kwargs) -> float:

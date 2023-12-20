@@ -8,7 +8,7 @@ and don't rely on the *ordering* of those tokens.
 """
 import collections
 import math
-from typing import Iterable
+from collections.abc import Iterable
 
 
 def jaccard(seq1: Iterable[str], seq2: Iterable[str]) -> float:

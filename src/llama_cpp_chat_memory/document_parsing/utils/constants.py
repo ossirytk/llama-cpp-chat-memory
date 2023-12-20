@@ -3,7 +3,7 @@ Collection of regular expressions and other (small, generally useful) constants.
 """
 import pathlib
 import re
-from typing import Pattern
+from re import Pattern
 
 DEFAULT_DATA_DIR: pathlib.Path = pathlib.Path(__file__).parent.resolve() / "data"
 

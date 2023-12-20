@@ -8,8 +8,9 @@ or sentence through rule-based pattern-matching of the annotated tokens.
 from __future__ import annotations
 
 import collections
+from collections.abc import Iterable
 from operator import itemgetter
-from typing import Iterable, Optional
+from typing import Optional
 
 import numpy as np
 from document_parsing.utils import constants, types
@@ -34,7 +35,7 @@ def acronyms(doclike: types.DocLike) -> Iterable[Token]:
 
 def acronyms_and_definitions(
     doclike: types.DocLike,
-    known_acro_defs: Optional[dict[str, str]] = None,
+    known_acro_defs: dict[str, str] | None = None,
 ) -> dict[str, str]:
     """
     Extract a collection of acronyms and their most likely definitions, if available,
@@ -282,7 +283,7 @@ def _get_acronym_definition(
     return (definition, confidence)
 
 
-def is_acronym(token: str, exclude: Optional[set[str]] = None) -> bool:
+def is_acronym(token: str, exclude: set[str] | None = None) -> bool:
     """
     Pass single token as a string, return True/False if is/is not valid acronym.
 

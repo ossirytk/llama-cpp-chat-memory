@@ -5,7 +5,7 @@ Pipeline
 :mod:`textacy.preprocessing.pipeline`: Basic functionality for composing multiple
 preprocessing steps into a single callable pipeline.
 """
-from typing import Callable
+from collections.abc import Callable
 
 from cytoolz import functoolz
 

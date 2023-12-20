@@ -9,7 +9,8 @@ from __future__ import annotations
 import itertools
 import operator
 import re
-from typing import Callable, Collection, Iterable, Optional
+from collections.abc import Callable, Collection, Iterable
+from typing import Optional
 
 from cytoolz import itertoolz
 from document_parsing.extract import matches
@@ -45,8 +46,7 @@ def terms_to_strings(
         terms_ = (by(term) for term in terms)
     else:
         raise ValueError(errors.value_invalid_msg("by", by, {"orth", "lower", "lemma", Callable}))
-    for term in terms_:
-        yield term
+    yield from terms_
 
 
 def clean_term_strings(terms: Iterable[str]) -> Iterable[str]:
@@ -98,7 +98,7 @@ def clean_term_strings(terms: Iterable[str]) -> Iterable[str]:
 def aggregate_term_variants(
     terms: set[str],
     *,
-    acro_defs: Optional[dict[str, str]] = None,
+    acro_defs: dict[str, str] | None = None,
     fuzzy_dedupe: bool = True,
 ) -> list[set[str]]:
     """
@@ -123,14 +123,14 @@ def aggregate_term_variants(
         Proceedings of the 19th international conference on Computational linguistics-
         Volume 1. Association for Computational Linguistics, 2002.
     """
-    from .. import similarity  # ugh, hide import here
+    from src.llama_cpp_chat_memory.document_parsing import similarity  # ugh, hide import here
 
     agg_terms = []
     seen_terms: set[str] = set()
     for term in sorted(terms, key=len, reverse=True):
         if term in seen_terms:
             continue
-        variants = set([term])
+        variants = {term}
         seen_terms.add(term)
 
         # symbolic variations
@@ -233,7 +233,7 @@ def get_ngram_candidates(
     doc: Doc,
     ns: int | Collection[int],
     *,
-    include_pos: Optional[str | Collection[str]] = ("NOUN", "PROPN", "ADJ"),
+    include_pos: str | Collection[str] | None = ("NOUN", "PROPN", "ADJ"),
 ) -> Iterable[tuple[Token, ...]]:
     """
     Get candidate keyterms from ``doc``, where candidates are n-length sequences
@@ -263,8 +263,7 @@ def get_ngram_candidates(
     if include_pos:
         include_pos_: set[str] = utils.to_set(include_pos)
         ngrams = (ngram for ngram in ngrams if all(word.pos_ in include_pos_ for word in ngram))
-    for ngram in ngrams:
-        yield ngram
+    yield from ngrams
 
 
 def get_pattern_matching_candidates(
@@ -295,7 +294,7 @@ def get_filtered_topn_terms(
     term_scores: Iterable[tuple[str, float]],
     topn: int,
     *,
-    match_threshold: Optional[float] = None,
+    match_threshold: float | None = None,
 ) -> list[tuple[str, float]]:
     """
     Build up a list of the ``topn`` terms, filtering out any that are substrings
@@ -311,7 +310,7 @@ def get_filtered_topn_terms(
             used to filter out terms that are sufficiently similar
             to higher-scoring terms. Uses :func:`textacy.similarity.token_sort_ratio()`.
     """
-    from .. import similarity  # ugh, hide import here
+    from src.llama_cpp_chat_memory.document_parsing import similarity  # ugh, hide import here
 
     topn_terms = []
     seen_terms: set[str] = set()

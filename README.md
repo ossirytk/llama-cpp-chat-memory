@@ -99,7 +99,7 @@ You can scrape web pages to text documents in order to use them as documents for
 The web scraping is prepared with config files in web_scrape_configs folder. The format is in json. See the example files for the specfics. The current impelemntation is unoptimized, so use with caution for a large number of pages.</BR>
 
 To run the scrape run:
->python -m document-parsing.web_craper</BR>
+>python -m document_parsing.web_scraper</BR>
 
 See --help for params
 

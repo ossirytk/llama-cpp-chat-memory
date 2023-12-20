@@ -9,7 +9,8 @@ included terms and flexible weighting/normalization schemes for their values.
 
 Intended primarily as a simpler- and higher-level API for sparse vectorization of docs.
 """
-from typing import Iterable, Literal, Optional
+from collections.abc import Iterable
+from typing import Literal, Optional
 
 import scipy.sparse as sp
 from document_parsing.representations import vectorizers
@@ -19,8 +20,8 @@ def build_doc_term_matrix(
     tokenized_docs: Iterable[Iterable[str]],
     *,
     tf_type: Literal["linear", "sqrt", "log", "binary"] = "linear",
-    idf_type: Optional[Literal["standard", "smooth", "bm25"]] = None,
-    dl_type: Optional[Literal["linear", "sqrt", "log"]] = None,
+    idf_type: Literal["standard", "smooth", "bm25"] | None = None,
+    dl_type: Literal["linear", "sqrt", "log"] | None = None,
     **kwargs,
 ) -> tuple[sp.csr_matrix, dict[str, int]]:
     """
@@ -91,8 +92,8 @@ def build_grp_term_matrix(
     grps: Iterable[str],
     *,
     tf_type: Literal["linear", "sqrt", "log", "binary"] = "linear",
-    idf_type: Optional[Literal["standard", "smooth", "bm25"]] = None,
-    dl_type: Optional[Literal["linear", "sqrt", "log"]] = None,
+    idf_type: Literal["standard", "smooth", "bm25"] | None = None,
+    dl_type: Literal["linear", "sqrt", "log"] | None = None,
     **kwargs,
 ) -> tuple[sp.csr_matrix, dict[str, int], dict[str, int]]:
     """

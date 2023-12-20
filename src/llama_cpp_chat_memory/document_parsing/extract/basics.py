@@ -7,8 +7,9 @@ via spaCy, with bells and whistles for filtering the results.
 """
 from __future__ import annotations
 
+from collections.abc import Collection, Iterable
 from functools import partial
-from typing import Collection, Iterable, Optional, Union
+from typing import Optional, Union
 
 from cytoolz import itertoolz
 from document_parsing.utils import constants, errors, types, utils
@@ -22,8 +23,8 @@ def words(
     filter_stops: bool = True,
     filter_punct: bool = True,
     filter_nums: bool = False,
-    include_pos: Optional[str | Collection[str]] = None,
-    exclude_pos: Optional[str | Collection[str]] = None,
+    include_pos: str | Collection[str] | None = None,
+    exclude_pos: str | Collection[str] | None = None,
     min_freq: int = 1,
 ) -> Iterable[Token]:
     """
@@ -70,8 +71,7 @@ def words(
         freqs = itertoolz.frequencies(w.lower_ for w in words_)
         words_ = (w for w in words_ if freqs[w.lower_] >= min_freq)
 
-    for word in words_:
-        yield word
+    yield from words_
 
 
 def ngrams(
@@ -81,8 +81,8 @@ def ngrams(
     filter_stops: bool = True,
     filter_punct: bool = True,
     filter_nums: bool = False,
-    include_pos: Optional[str | Collection[str]] = None,
-    exclude_pos: Optional[str | Collection[str]] = None,
+    include_pos: str | Collection[str] | None = None,
+    exclude_pos: str | Collection[str] | None = None,
     min_freq: int = 1,
 ) -> Iterable[Span]:
     """
@@ -121,7 +121,8 @@ def ngrams(
     """
     ns_: tuple[int, ...] = utils.to_tuple(n)
     if any(n_ < 1 for n_ in ns_):
-        raise ValueError("n must be greater than or equal to 1")
+        msg = "n must be greater than or equal to 1"
+        raise ValueError(msg)
 
     ngrams_: Iterable[Span]
     for n_ in ns_:
@@ -144,15 +145,14 @@ def ngrams(
             freqs = itertoolz.frequencies(ng.text.lower() for ng in ngrams_)
             ngrams_ = (ng for ng in ngrams_ if freqs[ng.text.lower()] >= min_freq)
 
-        for ngram in ngrams_:
-            yield ngram
+        yield from ngrams_
 
 
 def entities(
     doclike: types.DocLike,
     *,
-    include_types: Optional[str | Collection[str]] = None,
-    exclude_types: Optional[str | Collection[str]] = None,
+    include_types: str | Collection[str] | None = None,
+    exclude_types: str | Collection[str] | None = None,
     drop_determiners: bool = True,
     min_freq: int = 1,
 ) -> Iterable[Span]:
@@ -199,12 +199,12 @@ def entities(
     if include_types:
         if isinstance(include_types, str):
             ents = (ent for ent in ents if ent.label_ == include_types)
-        elif isinstance(include_types, (set, frozenset, list, tuple)):
+        elif isinstance(include_types, set | frozenset | list | tuple):
             ents = (ent for ent in ents if ent.label_ in include_types)
     if exclude_types:
         if isinstance(exclude_types, str):
             ents = (ent for ent in ents if ent.label_ != exclude_types)
-        elif isinstance(exclude_types, (set, frozenset, list, tuple)):
+        elif isinstance(exclude_types, set | frozenset | list | tuple):
             ents = (ent for ent in ents if ent.label_ not in exclude_types)
     if drop_determiners is True:
         ents = (
@@ -216,11 +216,10 @@ def entities(
         freqs = itertoolz.frequencies(ent.text.lower() for ent in ents)
         ents = (ent for ent in ents if freqs[ent.text.lower()] >= min_freq)
 
-    for ent in ents:
-        yield ent
+    yield from ents
 
 
-def _parse_ent_types(ent_types: Optional[str | Collection[str]], which: str) -> Optional[str | set[str]]:
+def _parse_ent_types(ent_types: str | Collection[str] | None, which: str) -> str | set[str] | None:
     if not ent_types:
         return None
     elif isinstance(ent_types, str):
@@ -230,7 +229,7 @@ def _parse_ent_types(ent_types: Optional[str | Collection[str]], which: str) -> 
             return constants.NUMERIC_ENT_TYPES
         else:
             return ent_types
-    elif isinstance(ent_types, (set, frozenset, list, tuple)):
+    elif isinstance(ent_types, set | frozenset | list | tuple):
         ent_types = {ent_type.upper() for ent_type in ent_types}
         # again, replace the shorthand numeric case by its corresponding constant
         # and include it in the set in case other types are specified
@@ -240,7 +239,7 @@ def _parse_ent_types(ent_types: Optional[str | Collection[str]], which: str) -> 
             return ent_types
     else:
         raise TypeError(
-            errors.type_invalid_msg(f"{which}_types", type(ent_types), Optional[Union[str, Collection[str]]])
+            errors.type_invalid_msg(f"{which}_types", type(ent_types), Optional[str | Collection[str]])
         )
 
 
@@ -267,16 +266,15 @@ def noun_chunks(doclike: types.DocLike, *, drop_determiners: bool = True, min_fr
         freqs = itertoolz.frequencies(nc.text.lower() for nc in ncs)
         ncs = (nc for nc in ncs if freqs[nc.text.lower()] >= min_freq)
 
-    for nc in ncs:
-        yield nc
+    yield from ncs
 
 
 def terms(
     doclike: types.DocLike,
     *,
-    ngs: Optional[int | Collection[int] | types.DocLikeToSpans] = None,
-    ents: Optional[bool | types.DocLikeToSpans] = None,
-    ncs: Optional[bool | types.DocLikeToSpans] = None,
+    ngs: int | Collection[int] | types.DocLikeToSpans | None = None,
+    ents: bool | types.DocLikeToSpans | None = None,
+    ncs: bool | types.DocLikeToSpans | None = None,
     dedupe: bool = True,
 ) -> Iterable[Span]:
     """
@@ -328,8 +326,7 @@ def terms(
     terms_ = itertoolz.concat(extractor(doclike) for extractor in extractors)
     if dedupe is True:
         terms_ = itertoolz.unique(terms_, lambda span: (span.start, span.end))
-    for term in terms_:
-        yield term
+    yield from terms_
 
 
 def _get_extractors(ngs, ents, ncs) -> list[types.DocLikeToSpans]:
@@ -340,12 +337,13 @@ def _get_extractors(ngs, ents, ncs) -> list[types.DocLikeToSpans]:
     ]
     extractors = [extractor for extractor in all_extractors if extractor is not None]
     if not extractors:
-        raise ValueError("at least one term extractor must be specified")
+        msg = "at least one term extractor must be specified"
+        raise ValueError(msg)
     else:
         return extractors
 
 
-def _get_ngs_extractor(ngs) -> Optional[types.DocLikeToSpans]:
+def _get_ngs_extractor(ngs) -> types.DocLikeToSpans | None:
     if ngs is None:
         return None
     elif callable(ngs):
@@ -356,7 +354,7 @@ def _get_ngs_extractor(ngs) -> Optional[types.DocLikeToSpans]:
         raise TypeError()
 
 
-def _get_ents_extractor(ents) -> Optional[types.DocLikeToSpans]:
+def _get_ents_extractor(ents) -> types.DocLikeToSpans | None:
     if ents is None:
         return None
     elif callable(ents):
@@ -367,7 +365,7 @@ def _get_ents_extractor(ents) -> Optional[types.DocLikeToSpans]:
         raise TypeError()
 
 
-def _get_ncs_extractor(ncs) -> Optional[types.DocLikeToSpans]:
+def _get_ncs_extractor(ncs) -> types.DocLikeToSpans | None:
     if ncs is None:
         return None
     elif callable(ncs):

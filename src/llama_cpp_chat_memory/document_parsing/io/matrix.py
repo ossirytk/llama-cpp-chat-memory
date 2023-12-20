@@ -68,7 +68,7 @@ def write_sparse_matrix(
     See Also:
         https://docs.scipy.org/doc/numpy-1.13.0/reference/routines.io.html#numpy-binary-files-npy-npz
     """
-    if not isinstance(data, (sp.csc_matrix, sp.csr_matrix)):
+    if not isinstance(data, sp.csc_matrix | sp.csr_matrix):
         raise TypeError(errors.type_invalid_msg("data", type(data), Union[sp.csc_matrix, sp.csr_matrix]))
     filepath = utils.to_path(filepath).resolve()
     if make_dirs is True:

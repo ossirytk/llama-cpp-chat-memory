@@ -5,7 +5,8 @@ in either pickle or binary format. Be warned: Both formats have pros and cons.
 from __future__ import annotations
 
 import pickle
-from typing import Iterable, Literal, Optional
+from collections.abc import Iterable
+from typing import Literal, Optional
 
 from document_parsing import spacier
 from document_parsing.io import utils as io_utils
@@ -19,7 +20,7 @@ def read_spacy_docs(
     filepath: types.PathLike,
     *,
     format: FormatType = "binary",
-    lang: Optional[types.LangLike] = None,
+    lang: types.LangLike | None = None,
 ) -> Iterable[Doc]:
     """
     Read the contents of a file at ``filepath``, written in binary or pickle format.
@@ -49,22 +50,23 @@ def read_spacy_docs(
     """
     if format == "binary":
         if lang is None:
-            raise ValueError(
+            msg = (
                 "lang=None is invalid. When format='binary', a `spacy.Language` "
                 "(well, its associated `spacy.Vocab`) is required to deserialize "
                 "the binary data. Note that this should be the same language pipeline "
                 "used when processing the original docs!"
             )
+            raise ValueError(
+                msg
+            )
         else:
             lang = spacier.utils.resolve_langlike(lang)
         docbin = DocBin().from_disk(filepath)
-        for doc in docbin.get_docs(lang.vocab):
-            yield doc
+        yield from docbin.get_docs(lang.vocab)
 
     elif format == "pickle":
         with io_utils.open_sesame(filepath, mode="rb") as f:
-            for spacy_doc in pickle.load(f):
-                yield spacy_doc
+            yield from pickle.load(f)
 
     else:
         raise ValueError(errors.value_invalid_msg("format", format, {"binary", "pickle"}))
@@ -76,7 +78,7 @@ def write_spacy_docs(
     *,
     make_dirs: bool = False,
     format: FormatType = "binary",
-    attrs: Optional[Iterable[str]] = None,
+    attrs: Iterable[str] | None = None,
     store_user_data: bool = False,
 ) -> None:
     """

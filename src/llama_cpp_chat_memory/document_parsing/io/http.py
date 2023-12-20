@@ -5,8 +5,9 @@ and either reading it into memory or writing it directly to disk.
 from __future__ import annotations
 
 import logging
+from collections.abc import Iterable
 from contextlib import closing
-from typing import Iterable, Optional
+from typing import Optional
 
 import requests
 from document_parsing.io import utils as io_utils
@@ -22,7 +23,7 @@ def read_http_stream(
     lines: bool = False,
     decode_unicode: bool = False,
     chunk_size: int = 1024,
-    auth: Optional[tuple[str, str]] = None,
+    auth: tuple[str, str] | None = None,
 ) -> Iterable[str] | Iterable[bytes]:
     """
     Read data from ``url`` in a stream, either all at once or line-by-line.
@@ -67,10 +68,10 @@ def write_http_stream(
     filepath: types.PathLike,
     *,
     mode: str = "wt",
-    encoding: Optional[str] = None,
+    encoding: str | None = None,
     make_dirs: bool = False,
     chunk_size: int = 1024,
-    auth: Optional[tuple[str, str]] = None,
+    auth: tuple[str, str] | None = None,
 ) -> None:
     """
     Download data from ``url`` in a stream, and write successive chunks

@@ -1,7 +1,8 @@
 from __future__ import annotations
 
 import operator
-from typing import Any, Collection, Literal, Optional, Union
+from collections.abc import Collection
+from typing import Any, Literal, Optional, Union
 
 import cytoolz
 from document_parsing.extract import basics
@@ -67,9 +68,9 @@ def to_bag_of_terms(
     *,
     by: SpanGroupByType = "lemma_",
     weighting: WeightingType = "count",
-    ngs: Optional[int | Collection[int] | types.DocLikeToSpans] = None,
-    ents: Optional[bool | types.DocLikeToSpans] = None,
-    ncs: Optional[bool | types.DocLikeToSpans] = None,
+    ngs: int | Collection[int] | types.DocLikeToSpans | None = None,
+    ents: bool | types.DocLikeToSpans | None = None,
+    ncs: bool | types.DocLikeToSpans | None = None,
     dedupe: bool = True,
 ) -> dict[str, int] | dict[str, float]:
     """

@@ -3,7 +3,8 @@ import html.parser
 import re
 import sys
 import unicodedata
-from typing import Any, Pattern
+from re import Pattern
+from typing import Any
 
 
 class HTMLTextExtractor(html.parser.HTMLParser):
@@ -165,7 +166,7 @@ QUOTE_TRANSLATION_TABLE: dict[int, int] = {
 }
 
 
-@functools.lru_cache(maxsize=None)
+@functools.cache
 def _get_punct_translation_table():
     return dict.fromkeys(
         (i for i in range(sys.maxunicode) if unicodedata.category(chr(i)).startswith("P")),
@@ -178,4 +179,5 @@ def __getattr__(name: str) -> Any:
     if name == "PUNCT_TRANSLATION_TABLE":
         return _get_punct_translation_table()
     else:
-        raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
+        msg = f"module {__name__!r} has no attribute {name!r}"
+        raise AttributeError(msg)

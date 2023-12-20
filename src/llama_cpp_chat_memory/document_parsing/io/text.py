@@ -4,7 +4,8 @@ plain text format, either as one text per file or one text per *line* in a file.
 """
 from __future__ import annotations
 
-from typing import Iterable, Optional, Union
+from collections.abc import Iterable
+from typing import Optional, Union
 
 from document_parsing.io import utils as io_utils
 from document_parsing.utils import types
@@ -14,7 +15,7 @@ def read_text(
     filepath: types.PathLike,
     *,
     mode: str = "rt",
-    encoding: Optional[str] = None,
+    encoding: str | None = None,
     lines: bool = False,
 ) -> Iterable[str]:
     """
@@ -40,8 +41,7 @@ def read_text(
         if lines is False:
             yield f.read()
         else:
-            for line in f:
-                yield line
+            yield from f
 
 
 def write_text(
@@ -49,7 +49,7 @@ def write_text(
     filepath: types.PathLike,
     *,
     mode: str = "wt",
-    encoding: Optional[str] = None,
+    encoding: str | None = None,
     make_dirs: bool = False,
     lines: bool = False,
 ) -> None:
@@ -83,6 +83,6 @@ def write_text(
         if lines is False:
             f.write(data)
         else:
-            newline: Union[str, bytes] = "\n" if "t" in mode else b"\n"
+            newline: str | bytes = "\n" if "t" in mode else b"\n"
             for line in data:
                 f.write(line + newline)

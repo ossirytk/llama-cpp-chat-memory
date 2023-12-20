@@ -8,8 +8,10 @@ through rule-based pattern-matching of the annotated tokens.
 from __future__ import annotations
 
 import collections
+from collections.abc import Iterable, Mapping
 from operator import attrgetter
-from typing import Iterable, Mapping, Optional, Pattern
+from re import Pattern
+from typing import Optional
 
 from cytoolz import itertoolz
 from document_parsing.extract import matches
@@ -123,7 +125,7 @@ def semistructured_statements(
     *,
     entity: str | Pattern,
     cue: str,
-    fragment_len_range: Optional[tuple[Optional[int], Optional[int]]] = None,
+    fragment_len_range: tuple[int | None, int | None] | None = None,
 ) -> Iterable[SSSTriple]:
     """
     Extract "semi-structured statements" from a document as a sequence of
@@ -199,16 +201,22 @@ def direct_quotations(doc: Doc) -> Iterable[DQTriple]:
     try:
         _reporting_verbs = constants.REPORTING_VERBS[doc.lang_]
     except KeyError:
-        raise ValueError(
+        msg = (
             f"direct quotation extraction is not implemented for lang='{doc.lang_}', "
             f"only {sorted(constants.REPORTING_VERBS.keys())}"
         )
+        raise ValueError(
+            msg
+        )
     qtok_idxs = [tok.i for tok in doc if tok.is_quote]
     if len(qtok_idxs) % 2 != 0:
-        raise ValueError(
+        msg = (
             f"{len(qtok_idxs)} quotation marks found, indicating an unclosed quotation; "
             "given the limitations of this method, it's safest to bail out "
             "rather than guess which quotation is unclosed"
+        )
+        raise ValueError(
+            msg
         )
     qtok_pair_idxs = list(itertoolz.partition(2, qtok_idxs))
     for qtok_start_idx, qtok_end_idx in qtok_pair_idxs:
@@ -276,7 +284,7 @@ def direct_quotations(doc: Doc) -> Iterable[DQTriple]:
 
 def expand_noun(tok: Token) -> list[Token]:
     """Expand a noun token to include all associated conjunct and compound nouns."""
-    tok_and_conjuncts = [tok] + list(tok.conjuncts)
+    tok_and_conjuncts = [tok, *list(tok.conjuncts)]
     compounds = [
         child
         for tc in tok_and_conjuncts
@@ -290,4 +298,4 @@ def expand_noun(tok: Token) -> list[Token]:
 def expand_verb(tok: Token) -> list[Token]:
     """Expand a verb token to include all associated auxiliary and negation tokens."""
     verb_modifiers = [child for child in tok.children if child.dep in _VERB_MODIFIER_DEPS]
-    return [tok] + verb_modifiers
+    return [tok, *verb_modifiers]

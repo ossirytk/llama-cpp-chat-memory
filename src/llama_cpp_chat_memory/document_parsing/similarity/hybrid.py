@@ -7,7 +7,7 @@ token-, and/or sequence-based algorithms.
 """
 from __future__ import annotations
 
-from typing import Callable, Sequence
+from collections.abc import Callable, Sequence
 
 from document_parsing.similarity import edits
 from document_parsing.utils import constants

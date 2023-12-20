@@ -9,7 +9,8 @@ from __future__ import annotations
 
 import re
 import unicodedata
-from typing import Collection, Optional
+from collections.abc import Collection
+from typing import Optional
 
 from document_parsing import utils
 from document_parsing.preprocessing import resources
@@ -46,7 +47,7 @@ def accents(text: str, *, fast: bool = False) -> str:
 def brackets(
     text: str,
     *,
-    only: Optional[str | Collection[str]] = None,
+    only: str | Collection[str] | None = None,
 ) -> str:
     """
     Remove text within curly {}, square [], and/or round () brackets, as well as
@@ -103,7 +104,7 @@ def html_tags(text: str) -> str:
 def punctuation(
     text: str,
     *,
-    only: Optional[str | Collection[str]] = None,
+    only: str | Collection[str] | None = None,
 ) -> str:
     """
     Remove punctuation from ``text`` by replacing all instances of punctuation

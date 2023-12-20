@@ -37,7 +37,7 @@ def _get_size(obj, seen=None):
     if isinstance(obj, dict):
         size += sum(_get_size(v, seen) for v in obj.values())
         size += sum(_get_size(k, seen) for k in obj.keys())
-    elif hasattr(obj, "__iter__") and not isinstance(obj, (str, bytes, bytearray)):
+    elif hasattr(obj, "__iter__") and not isinstance(obj, str | bytes | bytearray):
         try:
             size += sum(_get_size(i, seen) for i in obj)
         except TypeError:

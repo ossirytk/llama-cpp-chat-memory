@@ -3,8 +3,10 @@ from __future__ import annotations
 import collections
 import itertools
 import math
+from collections import Counter
+from collections.abc import Callable, Collection
 from operator import itemgetter
-from typing import Callable, Collection, Counter, Optional
+from typing import Optional
 
 import networkx as nx
 from document_parsing.extract import utils as ext_utils
@@ -23,12 +25,12 @@ Candidate = collections.namedtuple("Candidate", ["text", "idx", "length", "count
 def sgrank(
     doc: Doc,
     *,
-    normalize: Optional[str | Callable[[Span], str]] = "lemma",
+    normalize: str | Callable[[Span], str] | None = "lemma",
     ngrams: int | Collection[int] = (1, 2, 3, 4, 5, 6),
-    include_pos: Optional[str | Collection[str]] = ("NOUN", "PROPN", "ADJ"),
+    include_pos: str | Collection[str] | None = ("NOUN", "PROPN", "ADJ"),
     window_size: int = 1500,
     topn: int | float = 10,
-    idf: Optional[dict[str, float]] = None,
+    idf: dict[str, float] | None = None,
 ) -> list[tuple[str, float]]:
     """
     Extract key terms from a document using the SGRank algorithm.
@@ -67,12 +69,14 @@ def sgrank(
     """
     # validate / transform args
     ngrams: tuple[int, ...] = utils.to_tuple(ngrams)
-    include_pos: Optional[set[str]] = utils.to_set(include_pos) if include_pos else None
+    include_pos: set[str] | None = utils.to_set(include_pos) if include_pos else None
     if window_size < 2:
-        raise ValueError("`window_size` must be >= 2")
+        msg = "`window_size` must be >= 2"
+        raise ValueError(msg)
     if isinstance(topn, float):
         if not 0.0 < topn <= 1.0:
-            raise ValueError("`topn` must be an int, or a float between 0.0 and 1.0")
+            msg = "`topn` must be an int, or a float between 0.0 and 1.0"
+            raise ValueError(msg)
 
     n_toks = len(doc)
     window_size = min(n_toks, window_size)
@@ -102,9 +106,9 @@ def sgrank(
 
 def _get_candidates(
     doc: Doc,
-    normalize: Optional[str | Callable[[Span], str]],
+    normalize: str | Callable[[Span], str] | None,
     ngrams: tuple[int, ...],
-    include_pos: Optional[set[str]],
+    include_pos: set[str] | None,
 ) -> tuple[list[Candidate], Counter[str]]:
     """
     Get n-gram candidate keyterms from ``doc``, with key information for each:
@@ -128,7 +132,7 @@ def _prefilter_candidates(
     candidates: list[Candidate],
     candidate_counts: Counter[str],
     topn: int,
-    idf: Optional[dict[str, float]],
+    idf: dict[str, float] | None,
 ) -> tuple[list[Candidate], set[str]]:
     """
     Filter initial set of candidates to only those with sufficiently high TF or
@@ -151,7 +155,7 @@ def _compute_term_weights(
     candidate_counts: dict[str, int],
     unique_candidates: set[str],
     n_toks: int,
-    idf: Optional[dict[str, float]],
+    idf: dict[str, float] | None,
 ) -> dict[str, float]:
     """
     Compute term weights from statistical attributes: position of first occurrence,

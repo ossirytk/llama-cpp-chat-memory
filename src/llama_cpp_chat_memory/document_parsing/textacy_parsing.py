@@ -14,6 +14,7 @@ from document_parsing.preprocessing.remove import brackets, html_tags
 from document_parsing.preprocessing.replace import hashtags, urls
 from document_parsing.spacier import core
 from dotenv import find_dotenv, load_dotenv
+from spacy.tokens import Doc
 
 logging.basicConfig(format="%(message)s", encoding="utf-8", level=logging.DEBUG)
 load_dotenv(find_dotenv())
@@ -21,7 +22,9 @@ load_dotenv(find_dotenv())
 SPACY_CHARACTER_LIMIT = 1000000
 
 
-def process_documents(documents, documents_directory, key_storage, collection_name, write_mode):
+def process_documents(
+    documents: Doc, documents_directory: str, key_storage: str, collection_name: str, write_mode: str
+):
     # You can use spacy.explain to get a description for these terms
     # Or see the model in https://spacy.io/usage/models and look for model label data
     logging.debug("Extracting terms from corpus")
@@ -84,9 +87,9 @@ def process_documents(documents, documents_directory, key_storage, collection_na
 
 
 def main(
-    documents_directory,
-    collection_name,
-    key_storage,
+    documents_directory: str,
+    collection_name: str,
+    key_storage: str,
 ) -> None:
     documents_pattern = os.path.join(documents_directory, "*.txt")
     documents_paths_txt = glob.glob(documents_pattern)

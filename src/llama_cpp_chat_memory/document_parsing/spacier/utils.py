@@ -10,7 +10,8 @@ from __future__ import annotations
 import functools
 import itertools
 import pathlib
-from typing import Iterable, Union
+from collections.abc import Iterable
+from typing import Union
 
 from cachetools import cached
 from cachetools.keys import hashkey
@@ -84,7 +85,8 @@ def preserve_case(token: Token) -> bool:
         ValueError: If parent document has not been POS-tagged.
     """
     if token.doc.has_annotation("TAG") is False:
-        raise ValueError(f"parent doc of token '{token}' has not been POS-tagged")
+        msg = f"parent doc of token '{token}' has not been POS-tagged"
+        raise ValueError(msg)
     # is_acronym() got moved into a subpkg with heavier dependencies that we don't
     # want imported at the top-level package; this is the only outside place
     # that uses that function, so let's hide the required import in this function
@@ -169,7 +171,7 @@ def get_span_for_verb_auxiliaries(verb: Token) -> tuple[int, int]:
 def resolve_langlike(lang: types.LangLike) -> Language:
     if isinstance(lang, Language):
         return lang
-    elif isinstance(lang, (str, pathlib.Path)):
+    elif isinstance(lang, str | pathlib.Path):
         return core.load_spacy_lang(lang)
     else:
         raise TypeError(errors.type_invalid_msg("lang", type(lang), types.LangLike))
@@ -178,7 +180,7 @@ def resolve_langlike(lang: types.LangLike) -> Language:
 def resolve_langlikeincontext(text: str, lang: types.LangLikeInContext) -> Language:
     if isinstance(lang, Language):
         return lang
-    elif isinstance(lang, (str, pathlib.Path)):
+    elif isinstance(lang, str | pathlib.Path):
         return core.load_spacy_lang(lang)
     elif callable(lang):
         return resolve_langlikeincontext(text, lang(text))

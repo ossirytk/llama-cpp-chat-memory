@@ -1,8 +1,9 @@
 """
 :mod:`textacy.types`: Definitions for common object types used throughout the package.
 """
+from collections.abc import Callable, Iterable
 from pathlib import Path
-from typing import Any, Callable, Iterable, NamedTuple, Protocol, TypeVar, Union
+from typing import Any, NamedTuple, Protocol, TypeVar, Union
 
 from spacy.language import Language
 from spacy.tokens import Doc, Span, Token

@@ -1,5 +1,5 @@
 import importlib.util
-from typing import Any, Dict, List
+from typing import Any
 
 from langchain.pydantic_v1 import BaseModel, Extra, root_validator
 from langchain.schema.embeddings import Embeddings
@@ -15,7 +15,7 @@ class CustomSpacyEmbeddings(BaseModel, Embeddings):
         extra = Extra.forbid
 
     @root_validator(pre=True)
-    def validate_environment(cls, values: Dict) -> Dict:
+    def validate_environment(cls, values: dict) -> dict:
         model_path = values["model_path"]
         # Check if the Spacy package is installed
         if importlib.util.find_spec("spacy") is None:
@@ -34,7 +34,7 @@ class CustomSpacyEmbeddings(BaseModel, Embeddings):
             raise ValueError(error_message) from None
         return values  # Return the validated values
 
-    def embed_documents(self, texts: List[str]) -> List[List[float]]:
+    def embed_documents(self, texts: list[str]) -> list[list[float]]:
         """
         Generates embeddings for a list of documents.
 
@@ -46,7 +46,7 @@ class CustomSpacyEmbeddings(BaseModel, Embeddings):
         """
         return [self.nlp(text).vector.tolist() for text in texts]
 
-    def embed_query(self, text: str) -> List[float]:
+    def embed_query(self, text: str) -> list[float]:
         """
         Generates an embedding for a single piece of text.
 

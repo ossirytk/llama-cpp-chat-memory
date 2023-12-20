@@ -8,7 +8,9 @@ using spaCy's built-in matcher or regular expressions.
 from __future__ import annotations
 
 import re
-from typing import Callable, Iterable, Literal, Optional, Pattern, Union
+from collections.abc import Callable, Iterable
+from re import Pattern
+from typing import Literal, Optional, Union
 
 from document_parsing.utils import constants, errors, types
 from spacy.matcher import Matcher
@@ -19,7 +21,7 @@ def token_matches(
     doclike: types.DocLike,
     patterns: str | list[str] | list[dict[str, str]] | list[list[dict[str, str]]],
     *,
-    on_match: Optional[Callable] = None,
+    on_match: Callable | None = None,
 ) -> Iterable[Span]:
     """
     Extract ``Span`` s from a document or sentence matching one or more patterns
@@ -75,12 +77,12 @@ def token_matches(
     """
     if isinstance(patterns, str):
         patterns = [_make_pattern_from_string(patterns)]
-    elif isinstance(patterns, (list, tuple)):
+    elif isinstance(patterns, list | tuple):
         if all(isinstance(item, str) for item in patterns):
             patterns = [_make_pattern_from_string(pattern) for pattern in patterns]  # type: ignore
         elif all(isinstance(item, dict) for item in patterns):
             patterns = [patterns]  # type: ignore
-        elif all(isinstance(item, (list, tuple)) for item in patterns):
+        elif all(isinstance(item, list | tuple) for item in patterns):
             pass  # already in the right format!
         else:
             raise TypeError(
@@ -100,8 +102,7 @@ def token_matches(
         )
     matcher = Matcher(doclike.vocab)
     matcher.add("match", patterns, on_match=on_match)
-    for match in matcher(doclike, as_spans=True):
-        yield match
+    yield from matcher(doclike, as_spans=True)
 
 
 def _make_pattern_from_string(patstr: str) -> list[dict[str, str]]:
@@ -131,11 +132,14 @@ def _make_pattern_from_string(patstr: str) -> list[dict[str, str]]:
                 pass
             pattern.append(tokpat)
         else:
-            raise ValueError(
+            msg = (
                 f"pattern string '{patstr}' is invalid; "
                 "each element in a pattern string must contain an attribute, "
                 "a corresponding value, and an optional quantity qualifier, "
                 "delimited by colons, like attr:value:op"
+            )
+            raise ValueError(
+                msg
             )
     return pattern
 

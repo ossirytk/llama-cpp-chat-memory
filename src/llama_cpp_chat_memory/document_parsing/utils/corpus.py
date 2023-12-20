@@ -10,7 +10,9 @@ import collections.abc
 import itertools
 import logging
 import math
-from typing import Any, Callable, Counter, Iterable, Literal, Optional, Union
+from collections import Counter
+from collections.abc import Callable, Iterable
+from typing import Any, Literal, Optional, Union
 
 import numpy as np
 import spacy
@@ -138,7 +140,7 @@ class Corpus:
     n_sents: int
     n_tokens: int
 
-    def __init__(self, lang: types.LangLike, data: Optional[types.CorpusData] = None):
+    def __init__(self, lang: types.LangLike, data: types.CorpusData | None = None):
         self.spacy_lang = spacier.utils.resolve_langlike(lang)
         self.lang = self.spacy_lang.lang  # type: ignore
         self.docs = []
@@ -158,8 +160,7 @@ class Corpus:
         return self.n_docs
 
     def __iter__(self) -> Iterable[Doc]:
-        for doc in self.docs:
-            yield doc
+        yield from self.docs
 
     def __contains__(self, doc) -> bool:
         return id(doc) in self._doc_ids
@@ -307,7 +308,8 @@ class Corpus:
         if not isinstance(doc, Doc):
             raise TypeError(errors.type_invalid_msg("doc", type(doc), Doc))
         if doc.vocab is not self.spacy_lang.vocab:
-            raise ValueError(f"doc.vocab ({doc.vocab}) must be the same as corpus.vocab ({self.spacy_lang.vocab})")
+            msg = f"doc.vocab ({doc.vocab}) must be the same as corpus.vocab ({self.spacy_lang.vocab})"
+            raise ValueError(msg)
         self._add_valid_doc(doc)
 
     def add_docs(self, docs: Iterable[Doc]) -> None:
@@ -334,7 +336,7 @@ class Corpus:
     def get(
         self,
         match_func: Callable[[Doc], bool],
-        limit: Optional[int] = None,
+        limit: int | None = None,
     ) -> Iterable[Doc]:
         """
         Get all (or N <= ``limit``) docs in :class:`Corpus` for which
@@ -361,15 +363,14 @@ class Corpus:
            document in the corpus; ``Corpus[:5]`` gets the first 5; etc.
         """
         matched_docs = (doc for doc in self.docs if match_func(doc) is True)
-        for doc in itertools.islice(matched_docs, limit):
-            yield doc
+        yield from itertools.islice(matched_docs, limit)
 
     # remove documents
 
     def remove(
         self,
         match_func: Callable[[Doc], bool],
-        limit: Optional[int] = None,
+        limit: int | None = None,
     ) -> None:
         """
         Remove all (or N <= ``limit``) docs in :class:`Corpus` for which
@@ -463,7 +464,7 @@ class Corpus:
         See Also:
             :func:`textacy.representations.matrix_utils.get_term_freqs()`
         """
-        word_counts_: Union[Counter[Any], dict[Any, Union[int, float]]]
+        word_counts_: Counter[Any] | dict[Any, int | float]
         word_counts_ = collections.Counter()
         for doc in self.docs:
             word_counts_.update(extract.to_bag_of_words(doc, by=by, weighting="count", **kwargs))
@@ -517,7 +518,7 @@ class Corpus:
         See Also:
             :func:`textacy.vsm.get_doc_freqs() <textacy.vsm.matrix_utils.get_doc_freqs>`
         """
-        word_doc_counts_: Union[Counter[Any], dict[Any, Union[int, float]]]
+        word_doc_counts_: Counter[Any] | dict[Any, int | float]
         word_doc_counts_ = collections.Counter()
         for doc in self.docs:
             word_doc_counts_.update(extract.to_bag_of_words(doc, by=by, weighting="binary", **kwargs))
@@ -540,7 +541,7 @@ class Corpus:
         self,
         name: str,
         agg_func: Callable[[Iterable[Any]], Any],
-        default: Optional[Any] = None,
+        default: Any | None = None,
     ) -> Any:
         """
         Aggregate values for a particular metadata field over all documents
@@ -563,7 +564,7 @@ class Corpus:
     def save(
         self,
         filepath: types.PathLike,
-        attrs: Optional[str | Iterable[str] | Literal["auto"]] = "auto",
+        attrs: str | Iterable[str] | Literal["auto"] | None = "auto",
         store_user_data: bool = True,
     ):
         """

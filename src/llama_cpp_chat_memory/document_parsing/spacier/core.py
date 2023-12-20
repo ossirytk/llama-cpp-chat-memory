@@ -68,7 +68,7 @@ def make_spacy_doc(
     data: types.DocData,
     lang: types.LangLikeInContext,
     *,
-    chunk_size: Optional[int] = None,
+    chunk_size: int | None = None,
 ) -> Doc:
     """
     Make a :class:`spacy.tokens.Doc` from valid inputs, and automatically
@@ -151,7 +151,7 @@ def make_spacy_doc(
         raise TypeError(errors.type_invalid_msg("data", type(data), types.DocData))
 
 
-def _make_spacy_doc_from_text(text: str, lang: types.LangLikeInContext, chunk_size: Optional[int]) -> Doc:
+def _make_spacy_doc_from_text(text: str, lang: types.LangLikeInContext, chunk_size: int | None) -> Doc:
     spacy_lang = sputils.resolve_langlikeincontext(text, lang)
     if chunk_size:
         doc = _make_spacy_doc_from_text_chunks(text, spacy_lang, chunk_size)
@@ -160,7 +160,7 @@ def _make_spacy_doc_from_text(text: str, lang: types.LangLikeInContext, chunk_si
     return doc
 
 
-def _make_spacy_doc_from_record(record: types.Record, lang: types.LangLikeInContext, chunk_size: Optional[int]) -> Doc:
+def _make_spacy_doc_from_record(record: types.Record, lang: types.LangLikeInContext, chunk_size: int | None) -> Doc:
     text, meta = record
     spacy_lang = sputils.resolve_langlikeincontext(text, lang)
     if chunk_size:
@@ -182,9 +182,12 @@ def _make_spacy_doc_from_doc(doc: Doc, lang: types.LangLikeInContext) -> Doc:
     # the one passed here; however, the best we can do (bc of spaCy's API) is ensure
     # that they share the same vocab
     if doc.vocab is not spacy_lang.vocab:
-        raise ValueError(
+        msg = (
             f"`spacy.Vocab` used to process document ({doc.vocab}) must be the same "
             f"as that used by the `lang` pipeline ({spacy_lang.vocab})"
+        )
+        raise ValueError(
+            msg
         )
     return doc
 

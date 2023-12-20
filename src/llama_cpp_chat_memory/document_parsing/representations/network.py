@@ -11,8 +11,9 @@ from __future__ import annotations
 import collections
 import itertools
 import logging
+from collections.abc import Collection, Sequence
 from operator import itemgetter
-from typing import Any, Collection, Literal, Optional, Sequence, Union
+from typing import Any, Literal, Optional, Union
 
 import networkx as nx
 import numpy as np
@@ -112,7 +113,8 @@ def build_cooccurrence_network(
         return nx.Graph()
 
     if window_size < 2:
-        raise ValueError(f"window_size = {window_size} is invalid; value must be >= 2")
+        msg = f"window_size = {window_size} is invalid; value must be >= 2"
+        raise ValueError(msg)
 
     # input data is Sequence[str]
     if isinstance(data[0], str):
@@ -279,7 +281,7 @@ def rank_nodes_by_bestcoverage(
     """
     alpha = float(alpha)
 
-    nodes_list = [node for node in graph]
+    nodes_list = list(graph)
     if len(nodes_list) == 0:
         LOGGER.warning("`graph` is empty")
         return {}
@@ -363,7 +365,7 @@ def rank_nodes_by_bestcoverage(
 
 def rank_nodes_by_divrank(
     graph: nx.Graph,
-    r: Optional[np.ndarray] = None,
+    r: np.ndarray | None = None,
     lambda_: float = 0.5,
     alpha: float = 0.5,
 ) -> dict[str, float]:
@@ -394,7 +396,7 @@ def rank_nodes_by_divrank(
 
     # specify the order of nodes to use in creating the matrix
     # and then later recovering the values from the order index
-    nodes_list = [node for node in graph]
+    nodes_list = list(graph)
     # create adjacency matrix, i.e.
     # n x n matrix where entry W_ij is the weight of the edge from V_i to V_j
     try:

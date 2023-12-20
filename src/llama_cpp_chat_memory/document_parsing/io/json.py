@@ -7,7 +7,8 @@ from __future__ import annotations
 import datetime
 import functools
 import json
-from typing import Any, Iterable, Optional, Union
+from collections.abc import Iterable
+from typing import Any, Optional, Union
 
 from document_parsing.io import utils as io_utils
 from document_parsing.utils import types
@@ -17,7 +18,7 @@ def read_json(
     filepath: types.PathLike,
     *,
     mode: str = "rt",
-    encoding: Optional[str] = None,
+    encoding: str | None = None,
     lines: bool = False,
 ) -> Iterable:
     """
@@ -49,7 +50,7 @@ def read_json_mash(
     filepath: types.PathLike,
     *,
     mode: str = "rt",
-    encoding: Optional[str] = None,
+    encoding: str | None = None,
     buffer_size: int = 2048,
 ) -> Iterable:
     """
@@ -92,13 +93,13 @@ def write_json(
     filepath: types.PathLike,
     *,
     mode: str = "wt",
-    encoding: Optional[str] = None,
+    encoding: str | None = None,
     make_dirs: bool = False,
     lines: bool = False,
     ensure_ascii: bool = False,
     separators: tuple[str, str] = (",", ":"),
     sort_keys: bool = False,
-    indent: Optional[int | str] = None,
+    indent: int | str | None = None,
 ) -> None:
     """
     Write JSON ``data`` to disk at ``filepath``, either all at once
@@ -154,7 +155,7 @@ def write_json(
                 )
             )
         else:
-            newline: Union[str, bytes] = "\n" if "t" in mode else b"\n"
+            newline: str | bytes = "\n" if "t" in mode else b"\n"
             for item in data:
                 f.write(
                     json.dumps(
@@ -179,7 +180,7 @@ class ExtendedJSONEncoder(json.JSONEncoder):
     """
 
     def default(self, obj):
-        if isinstance(obj, (datetime.datetime, datetime.date)):
+        if isinstance(obj, datetime.datetime | datetime.date):
             return obj.isoformat()
         else:
             return super().default(obj)

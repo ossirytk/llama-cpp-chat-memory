@@ -19,7 +19,8 @@ import shutil
 import tarfile
 import urllib
 import zipfile
-from typing import IO, Iterable, Literal, Optional
+from collections.abc import Iterable
+from typing import IO, Literal, Optional
 
 from cytoolz import itertoolz
 from document_parsing.io.http import write_http_stream
@@ -35,9 +36,9 @@ def open_sesame(
     filepath: types.PathLike,
     *,
     mode: str = "rt",
-    encoding: Optional[str] = None,
-    errors: Optional[str] = None,
-    newline: Optional[str] = None,
+    encoding: str | None = None,
+    errors: str | None = None,
+    newline: str | None = None,
     compression: Literal["infer", "bz2", "gzip", "xz", "zip"] = "infer",
     make_dirs: bool = False,
 ) -> IO:
@@ -72,14 +73,16 @@ def open_sesame(
     """
     # check args
     if encoding and "t" not in mode:
-        raise ValueError("encoding only applicable for text mode")
+        msg = "encoding only applicable for text mode"
+        raise ValueError(msg)
 
     # normalize filepath and make dirs, as needed
     filepath = utils.to_path(filepath).resolve()
     if make_dirs is True:
         _make_dirs(filepath, mode)
     elif mode.startswith("r") and not filepath.is_file():
-        raise OSError(f"file '{filepath}' does not exist")
+        msg = f"file '{filepath}' does not exist"
+        raise OSError(msg)
 
     compression = _get_compression(filepath, compression)
     f = _get_file_handle(
@@ -112,7 +115,7 @@ def _get_compression(filepath, compression):
     elif compression in _ext_to_compression.values():
         return compression
     else:
-        valid_values = [None, "infer"] + sorted(_ext_to_compression.values())
+        valid_values = [None, "infer", *sorted(_ext_to_compression.values())]
         raise ValueError(errors_.value_invalid_msg("compression", compression, valid_values))
 
 
@@ -142,13 +145,15 @@ def _get_file_handle(
             if len(zip_names) == 1:
                 f = zip_file.open(zip_names[0])
             elif len(zip_names) == 0:
-                raise ValueError(f"no files found in zip file '{filepath}'")
+                msg = f"no files found in zip file '{filepath}'"
+                raise ValueError(msg)
             else:
+                msg = f"{len(zip_names)} files found in zip file '{filepath}', " "but only one file is allowed"
                 raise ValueError(
-                    f"{len(zip_names)} files found in zip file '{filepath}', " "but only one file is allowed"
+                    msg
                 )
         else:
-            valid_values = [None, "infer"] + sorted(_ext_to_compression.values())
+            valid_values = [None, "infer", *sorted(_ext_to_compression.values())]
             raise ValueError(errors_.value_invalid_msg("compression", compression, valid_values))
 
         if "t" in mode:
@@ -173,12 +178,14 @@ def _make_dirs(filepath, mode):
 
 def _validate_read_mode(mode):
     if "w" in mode or "a" in mode:
-        raise ValueError(f"mode = '{mode}' is invalid; file must be opened in read mode")
+        msg = f"mode = '{mode}' is invalid; file must be opened in read mode"
+        raise ValueError(msg)
 
 
 def _validate_write_mode(mode):
     if "r" in mode:
-        raise ValueError(f"mode = '{mode}' is invalid; file must be opened in write mode")
+        msg = f"mode = '{mode}' is invalid; file must be opened in write mode"
+        raise ValueError(msg)
 
 
 def coerce_content_type(content: types.AnyStr, file_mode: str) -> str | bytes:
@@ -250,7 +257,7 @@ def unzip(seq: Iterable) -> tuple:
     try:
         first = tuple(next(seq))
     except StopIteration:
-        return tuple()
+        return ()
     # and create them
     niters = len(first)
     seqs = itertools.tee(itertoolz.cons(first, seq), niters)
@@ -260,9 +267,9 @@ def unzip(seq: Iterable) -> tuple:
 def get_filepaths(
     dirpath: types.PathLike,
     *,
-    match_regex: Optional[str] = None,
-    ignore_regex: Optional[str] = None,
-    extension: Optional[str] = None,
+    match_regex: str | None = None,
+    ignore_regex: str | None = None,
+    extension: str | None = None,
     ignore_invisible: bool = True,
     recursive: bool = False,
 ) -> Iterable[str]:
@@ -293,7 +300,8 @@ def get_filepaths(
     """
     dirpath = utils.to_path(dirpath).resolve()
     if not dirpath.is_dir():
-        raise OSError(f"directory '{dirpath}' does not exist")
+        msg = f"directory '{dirpath}' does not exist"
+        raise OSError(msg)
 
     re_match = re.compile(match_regex) if match_regex else None
     re_ignore = re.compile(ignore_regex) if ignore_regex else None
@@ -329,10 +337,10 @@ def get_filepaths(
 def download_file(
     url: str,
     *,
-    filename: Optional[str] = None,
+    filename: str | None = None,
     dirpath: types.PathLike = constants.DEFAULT_DATA_DIR,
     force: bool = False,
-) -> Optional[str]:
+) -> str | None:
     """
     Download a file from ``url`` and save it to disk.
 
@@ -376,7 +384,7 @@ def get_filename_from_url(url: str) -> str:
     return os.path.basename(urllib.parse.urlparse(urllib.parse.unquote_plus(url)).path)
 
 
-def unpack_archive(filepath: types.PathLike, *, extract_dir: Optional[types.PathLike] = None) -> types.PathLike:
+def unpack_archive(filepath: types.PathLike, *, extract_dir: types.PathLike | None = None) -> types.PathLike:
     """
     Extract data from a zip or tar archive file into a directory
     (or do nothing if the file isn't an archive).
