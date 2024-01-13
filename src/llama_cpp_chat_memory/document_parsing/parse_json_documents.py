@@ -22,13 +22,13 @@ load_dotenv(find_dotenv())
 
 
 def main(
-    documents_directory,
-    collection_name,
-    persist_directory,
-    key_storage,
-    chunk_size,
-    chunk_overlap,
-    embeddings_type,
+    documents_directory: str,
+    collection_name: str,
+    persist_directory: str,
+    key_storage: str,
+    chunk_size: int,
+    chunk_overlap: int,
+    embeddings_type: str,
 ) -> None:
     model_dir = getenv("MODEL_DIR")
     model = getenv("MODEL")

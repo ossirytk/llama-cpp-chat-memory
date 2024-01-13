@@ -2,8 +2,8 @@ import argparse
 import json
 import logging
 import os
+from collections.abc import Sequence
 from os.path import exists, join
-from typing import List, Sequence
 
 from bs4 import BeautifulSoup
 from dotenv import find_dotenv, load_dotenv
@@ -14,7 +14,7 @@ logging.basicConfig(format="%(message)s", encoding="utf-8", level=logging.DEBUG)
 load_dotenv(find_dotenv())
 
 
-def remove_unwanted_tags_and_lines(html_content: str, unwanted_tags: List[str]) -> str:
+def remove_unwanted_tags_and_lines(html_content: str, unwanted_tags: list[str]) -> str:
     soup = BeautifulSoup(html_content, "html.parser")
     for tag in unwanted_tags:
         for element in soup.find_all(tag):
@@ -22,8 +22,8 @@ def remove_unwanted_tags_and_lines(html_content: str, unwanted_tags: List[str]) 
     return soup
 
 
-def extract_tags(html_content: BeautifulSoup, tags: List[str], unwanted_lines: List[str]) -> str:
-    text_parts: List[str] = []
+def extract_tags(html_content: BeautifulSoup, tags: list[str], unwanted_lines: list[str]) -> str:
+    text_parts: list[str] = []
     for element in html_content.find_all():
         wanted = True
         # TODO this should probably be optimized
@@ -112,14 +112,14 @@ if __name__ == "__main__":
     parser.add_argument(
         "--data-directory",
         type=str,
-        default="./documents/warhammer_40k",
+        default="./documents/skynet",
         help="The directory where your text files are stored",
     )
 
     parser.add_argument(
         "--collection-name",
         type=str,
-        default="warhammer_40k",
+        default="skynet",
         help="The name of the Chroma collection",
     )
 

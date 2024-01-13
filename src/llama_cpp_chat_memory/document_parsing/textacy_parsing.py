@@ -7,9 +7,14 @@ import uuid
 from functools import partial
 from os.path import exists
 
-import textacy
+from document_parsing.extract import entities, ngrams, terms, terms_to_strings
+from document_parsing.preprocessing import make_pipeline
+from document_parsing.preprocessing.normalize import quotation_marks
+from document_parsing.preprocessing.remove import brackets, html_tags
+from document_parsing.preprocessing.replace import hashtags, urls
+from document_parsing.spacier import core
 from dotenv import find_dotenv, load_dotenv
-from textacy import extract, preprocessing
+from spacy.tokens import Doc
 
 logging.basicConfig(format="%(message)s", encoding="utf-8", level=logging.DEBUG)
 load_dotenv(find_dotenv())
@@ -17,15 +22,17 @@ load_dotenv(find_dotenv())
 SPACY_CHARACTER_LIMIT = 1000000
 
 
-def process_documents(documents, documents_directory, key_storage, collection_name, write_mode):
+def process_documents(
+    documents: Doc, documents_directory: str, key_storage: str, collection_name: str, write_mode: str
+):
     # You can use spacy.explain to get a description for these terms
     # Or see the model in https://spacy.io/usage/models and look for model label data
     logging.debug("Extracting terms from corpus")
-    terms = extract.terms(
+    extracted_terms = terms(
         documents,
-        ngs=partial(extract.ngrams, n=2, include_pos={"PROPN", "NOUN", "ADJ"}),
+        ngs=partial(ngrams, n=2, include_pos={"PROPN", "NOUN", "ADJ"}),
         ents=partial(
-            extract.entities,
+            entities,
             include_types={
                 "PRODUCT",
                 "EVENT",
@@ -44,7 +51,7 @@ def process_documents(documents, documents_directory, key_storage, collection_na
     )
     # )
 
-    lemma_strings = list(extract.terms_to_strings(terms, by="lemma"))
+    lemma_strings = list(terms_to_strings(extracted_terms, by="lemma"))
 
     # Filter duplicates
     uniques = set(lemma_strings)
@@ -80,9 +87,9 @@ def process_documents(documents, documents_directory, key_storage, collection_na
 
 
 def main(
-    documents_directory,
-    collection_name,
-    key_storage,
+    documents_directory: str,
+    collection_name: str,
+    key_storage: str,
 ) -> None:
     documents_pattern = os.path.join(documents_directory, "*.txt")
     documents_paths_txt = glob.glob(documents_pattern)
@@ -95,12 +102,12 @@ def main(
             text_corpus = text_corpus + content
 
     # See https://textacy.readthedocs.io/en/latest/api_reference/preprocessing.html for options
-    preproc = preprocessing.make_pipeline(
-        preprocessing.normalize.quotation_marks,
-        preprocessing.remove.brackets,
-        preprocessing.remove.html_tags,
-        preprocessing.replace.urls,
-        preprocessing.replace.hashtags,
+    preproc = make_pipeline(
+        quotation_marks,
+        brackets,
+        html_tags,
+        urls,
+        hashtags,
     )
 
     logging.debug("Cleaning Corpus")
@@ -113,11 +120,11 @@ def main(
         ]
 
         for corpus in parts:
-            doc = textacy.make_spacy_doc(corpus, lang="en_core_web_lg")
+            doc = core.make_spacy_doc(corpus, lang="en_core_web_lg")
             process_documents(doc, documents_directory, key_storage, collection_name, "a")
     else:
         # See https://spacy.io/usage/models for options
-        doc = textacy.make_spacy_doc(cleaned_corpus, lang="en_core_web_lg")
+        doc = core.make_spacy_doc(cleaned_corpus, lang="en_core_web_lg")
         process_documents(doc, documents_directory, key_storage, collection_name, "w")
 
 

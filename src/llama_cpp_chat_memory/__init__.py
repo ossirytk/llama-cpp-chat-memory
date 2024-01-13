@@ -13,7 +13,7 @@ from custom_llm_classes.custom_spacy_embeddings import CustomSpacyEmbeddings
 from dotenv import find_dotenv, load_dotenv
 from langchain.embeddings import HuggingFaceEmbeddings, LlamaCppEmbeddings
 from langchain.llms import LlamaCpp
-from langchain.prompts import PromptTemplate, load_prompt
+from langchain.prompts import load_prompt
 from langchain.vectorstores import Chroma
 from PIL import Image
 
@@ -47,6 +47,7 @@ Question: {input}
 
 {llama_response}
 """  # noqa: E501
+
 
 # Get metadata filter keys for this collection
 def parse_keys():
@@ -98,7 +99,7 @@ def parse_prompt():
             elif fnmatch.fnmatch(prompt_source, "*tavern.png"):
                 is_v2 = False
             else:
-                error_message= f"Unrecognized card type for : {prompt_source}"
+                error_message = f"Unrecognized card type for : {prompt_source}"
                 logging.error("Could not load card info")
                 raise ValueError(error_message)
             im = Image.open(prompt_source)
@@ -124,7 +125,6 @@ def parse_prompt():
                 CARD_AVATAR = copy_image_filename
             else:
                 CARD_AVATAR = copy_image_filename
-
 
     prompt = load_prompt(prompt_template_path)
 
@@ -192,8 +192,8 @@ def parse_prompt():
         llama_input=llama_input,
         llama_instruction=llama_instruction,
         llama_response=llama_response,
-        vector_context=" "
-        )
+        vector_context=" ",
+    )
 
 
 def get_avatar_image():
@@ -209,6 +209,7 @@ def get_avatar_image():
         return ""
     else:
         return CARD_AVATAR
+
 
 def instantiate_retriever():
     if getenv("COLLECTION") == "":
@@ -249,8 +250,8 @@ def instantiate_retriever():
         client=client,
         collection_name=getenv("COLLECTION"),
         persist_directory=getenv("PERSIST_DIRECTORY"),
-        embedding_function=embedder
-        )
+        embedding_function=embedder,
+    )
 
     return db
 
@@ -261,8 +262,12 @@ def instantiate_llm():
     model_source = join(model_dir, model)
 
     # Add things here if you want to play with the model params
+    # MAX_TOKENS is an optional param for when model answer cuts off
+    # This can happen when large context models are told to print multiple paragraphs
+    # Setting MAX_TOKENS lower than the context size can sometimes fix this
     params = {
         "n_ctx": getenv("N_CTX"),
+        # "max_tokens": getenv("MAX_TOKENS"),
         "temperature": 0.6,
         "last_n_tokens_size": 256,
         "n_batch": 1024,
@@ -278,7 +283,8 @@ def instantiate_llm():
     )
     return llm_model_init
 
-ALL_KEYS=parse_keys()
+
+ALL_KEYS = parse_keys()
 PROMPT = parse_prompt()
 AVATAR_IMAGE = get_avatar_image()
 USE_AVATAR_IMAGE = exists(AVATAR_IMAGE)
