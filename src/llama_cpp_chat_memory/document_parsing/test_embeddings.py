@@ -8,8 +8,8 @@ import chromadb
 from chromadb.config import Settings
 from custom_llm_classes.custom_spacy_embeddings import CustomSpacyEmbeddings
 from dotenv import find_dotenv, load_dotenv
-from langchain.embeddings import HuggingFaceEmbeddings, LlamaCppEmbeddings
-from langchain.vectorstores import Chroma
+from langchain_community.embeddings import HuggingFaceEmbeddings, LlamaCppEmbeddings
+from langchain_community.vectorstores import Chroma
 
 logging.basicConfig(format="%(message)s", encoding="utf-8", level=logging.DEBUG)
 # logging.basicConfig(format="%(message)s", encoding="utf-8", level=logging.INFO)
