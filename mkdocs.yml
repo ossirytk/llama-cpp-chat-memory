@@ -1,0 +1,24 @@
+site_name: Llama.cpp chat
+site_url: https://ossirytk.github.io/llama-cpp-chat-memory
+repo_url: https://github.com/ossirytk/llama-cpp-chat-memory
+nav:
+    - Home: index.md
+    - Quickstart:
+          - Getting started: getting_started.md
+          - Prompt Support: prompt_support.md
+          - Card Format: card_format.md
+          - Configs: configs.md
+          - Preparing the env: preparing_the_env.md
+    - The chatbot:
+          - Running the env: running_the_env.md
+          - Running the chatbot: running_the_chatbot.md
+    - Working with documents and the vectorstore:
+          - Webscraping: webscraping.md
+          - Creating embeddings: creating_embeddings.md
+    - Extras:
+          - Some Examples: examples.md
+          - License: UNLICENSE.md
+theme: readthedocs
+markdown_extensions:
+    - fenced_code
+    - tables
