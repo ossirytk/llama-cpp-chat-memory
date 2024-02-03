@@ -2,7 +2,7 @@ import base64
 import fnmatch
 import json
 import logging
-from os import getenv, mkdir
+from os import getenv, makedirs, mkdir
 from os.path import dirname, exists, join, realpath, splitext
 
 import chromadb
@@ -11,14 +11,28 @@ import yaml
 from chromadb.config import Settings
 from custom_llm_classes.custom_spacy_embeddings import CustomSpacyEmbeddings
 from dotenv import find_dotenv, load_dotenv
-from langchain.embeddings import HuggingFaceEmbeddings, LlamaCppEmbeddings
-from langchain.llms import LlamaCpp
 from langchain.prompts import load_prompt
-from langchain.vectorstores import Chroma
+from langchain_community.embeddings import HuggingFaceEmbeddings, LlamaCppEmbeddings
+from langchain_community.llms import LlamaCpp
+from langchain_community.vectorstores import Chroma
 from PIL import Image
 
-logging.basicConfig(format="%(message)s", encoding="utf-8", level=logging.DEBUG)
-# logging.basicConfig(format="%(message)s", encoding="utf-8", level=logging.INFO)
+# Write logs to chat.log file. This is easier to read
+# Requires that we empty the chainlit log handlers first
+# If you want chainlit debug logs, you might need to disable this
+LOGGIN_HANDLE = "chat"
+if not exists("./logs/chat.log"):
+    makedirs("./logs/", exist_ok=True)
+    open("./logs/chat.log", "a").close()
+
+for handler in logging.root.handlers[:]:
+    logging.root.removeHandler(handler)
+CHAT_LOG = logging.getLogger(LOGGIN_HANDLE)
+logging.basicConfig(
+    filename="./logs/chat.log", format="%(asctime)s %(levelname)s:%(message)s", encoding="utf-8", level=logging.DEBUG
+)
+
+
 load_dotenv(find_dotenv())
 CARD_AVATAR = None
 CHARACTER_NAME = None
@@ -61,8 +75,8 @@ def parse_keys():
             with open(key_storage_path) as key_file:
                 content = key_file.read()
             all_keys = json.loads(content)
-            logging.debug(f"Loading filter list from: {key_storage_path}")
-            logging.debug(f"Filter keys: {all_keys}")
+            CHAT_LOG.debug(f"Loading filter list from: {key_storage_path}")
+            CHAT_LOG.debug(f"Filter keys: {all_keys}")
     return all_keys
 
 
@@ -80,6 +94,7 @@ def parse_prompt():
     prompt_template_dir = getenv("PROMPT_TEMPLATE_DIRECTORY")
     prompt_template_name = getenv("PROMPT_TEMPLATE")
     prompt_template_path = join(prompt_template_dir, prompt_template_name)
+    replace_you = getenv("REPLACE_YOU")
     extension = splitext(prompt_source)[1]
     match extension:
         case ".json":
@@ -100,7 +115,7 @@ def parse_prompt():
                 is_v2 = False
             else:
                 error_message = f"Unrecognized card type for : {prompt_source}"
-                logging.error("Could not load card info")
+                CHAT_LOG.error("Could not load card info")
                 raise ValueError(error_message)
             im = Image.open(prompt_source)
             im.load()
@@ -132,11 +147,11 @@ def parse_prompt():
     char_name = card["name"] if "name" in card else card["char_name"]
     CHARACTER_NAME = char_name
 
-    with open(config_toml_path) as toml_file:
+    with open(config_toml_path, encoding="utf-8") as toml_file:
         toml_dict = toml.load(toml_file)
         toml_dict["UI"]["name"] = char_name
 
-    with open(config_toml_path, "w") as toml_file:
+    with open(file=config_toml_path, mode="w", encoding="utf-8") as toml_file:
         toml.dump(toml_dict, toml_file)
 
     # Supported model types are mistral and alpaca
@@ -172,15 +187,17 @@ def parse_prompt():
     mes_example = mes_example.replace("{{char}}", char_name)
     first_message = first_message.replace("{{char}}", char_name)
 
-    description = description.replace("You", char_name)
-    scenario = scenario.replace("You", char_name)
-    mes_example = mes_example.replace("You", char_name)
-    first_message = first_message.replace("You", char_name)
-
     description = description.replace("{{Char}}", char_name)
     scenario = scenario.replace("{{Char}}", char_name)
     mes_example = mes_example.replace("{{Char}}", char_name)
     first_message = first_message.replace("{{Char}}", char_name)
+
+    # Some poorly written cards just use You for character
+    if replace_you:
+        description = description.replace("You", "User")
+        scenario = scenario.replace("You", "User")
+        mes_example = mes_example.replace("You", "User")
+        first_message = first_message.replace("You", "User")
 
     with open(help_file_path, "w") as w:
         w.write(first_message)
@@ -224,7 +241,7 @@ def instantiate_retriever():
     embeddings_type = getenv("EMBEDDINGS_TYPE")
 
     if embeddings_type == "llama":
-        logging.info("Using llama embeddigs")
+        CHAT_LOG.info("Using llama embeddigs")
         params = {
             "n_ctx": getenv("N_CTX"),
             "n_batch": 1024,
@@ -235,10 +252,10 @@ def instantiate_retriever():
             **params,
         )
     elif embeddings_type == "spacy":
-        logging.info("Using spacy embeddigs")
+        CHAT_LOG.info("Using spacy embeddigs")
         embedder = CustomSpacyEmbeddings()
     elif embeddings_type == "huggingface":
-        logging.info("Using huggingface embeddigs")
+        CHAT_LOG.info("Using huggingface embeddigs")
         model_name = "sentence-transformers/all-mpnet-base-v2"
         model_kwargs = {"device": "cpu"}
         encode_kwargs = {"normalize_embeddings": False}
@@ -267,7 +284,6 @@ def instantiate_llm():
     # Setting MAX_TOKENS lower than the context size can sometimes fix this
     params = {
         "n_ctx": getenv("N_CTX"),
-        # "max_tokens": getenv("MAX_TOKENS"),
         "temperature": 0.6,
         "last_n_tokens_size": 256,
         "n_batch": 1024,
@@ -275,6 +291,12 @@ def instantiate_llm():
         "n_gpu_layers": getenv("LAYERS"),
         "rope_freq_scale": getenv("ROPE_CONTEXT"),
     }
+
+    if getenv("USE_MAX_TOKENS"):
+        CHAT_LOG.debug("Using max tokens")
+        params["max_tokens"] = getenv("MAX_TOKENS")
+    else:
+        CHAT_LOG.debug("Not using max tokens")
 
     llm_model_init = LlamaCpp(
         model_path=model_source,

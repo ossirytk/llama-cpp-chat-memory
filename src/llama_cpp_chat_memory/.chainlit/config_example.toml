@@ -1,21 +1,24 @@
 [project]
 enable_telemetry = false
 user_env = []
-session_timeout = 3600
+session_timeout = 50000
 cache = false
 
 [features]
 prompt_playground = true
+unsafe_allow_html = false
+latex = false
+multi_modal = true
 
 [UI]
 name = "Assistant"
+show_readme_as_default = true
 default_collapse_content = true
 default_expand_messages = false
-hide_cot = false
+hide_cot = true
 
 [meta]
-generated_by = "0.7.0"
+generated_by = "1.0.100"
 
-[UI.theme.light.primary]
-
-[UI.theme.dark.primary]
+[features.speech_to_text]
+enabled = false

@@ -1,4 +1,3 @@
-import logging
 import sys
 
 import chainlit as cl
@@ -12,15 +11,13 @@ from llama_cpp_chat_memory import (  # noqa: E402
     ALL_KEYS,
     AVATAR_IMAGE,
     CHARACTER_NAME,
+    CHAT_LOG,
     LLM_MODEL,
     PROMPT,
     RETRIEVER,
     USE_AVATAR_IMAGE,
     getenv,
 )
-
-logging.basicConfig(format="%(message)s", encoding="utf-8", level=logging.DEBUG)
-# logging.basicConfig(format="%(message)s", encoding="utf-8", level=logging.INFO)
 
 
 @cl.author_rename
@@ -48,7 +45,7 @@ async def start():
 
 
 async def get_answer(message, llm_chain: ConversationChain, callback):
-    logging.debug(message)
+    CHAT_LOG.debug(message)
     vector_context = ""
     if RETRIEVER:
         # Currently Chroma has no "like" implementation so this is a case sensitive hack with uuids
@@ -71,7 +68,7 @@ async def get_answer(message, llm_chain: ConversationChain, callback):
 
         query_type = getenv("QUERY_TYPE")
         k = int(getenv("VECTOR_K"))
-        logging.debug(f"There are {RETRIEVER._collection.count()} documents in the collection")
+        CHAT_LOG.debug(f"There are {RETRIEVER._collection.count()} documents in the collection")
         if query_type == "similarity":
             docs = RETRIEVER.similarity_search_with_score(query=message, k=k, filter=where)
             for answer in docs:
@@ -87,10 +84,10 @@ async def get_answer(message, llm_chain: ConversationChain, callback):
             for answer in docs:
                 vector_context = vector_context + answer.page_content
         else:
-            logging.error(f"{query_type} is not implemented")
+            CHAT_LOG.error(f"{query_type} is not implemented")
             raise NotImplementedError()
 
-        logging.debug(vector_context)
+        CHAT_LOG.debug(vector_context)
     llm_chain.prompt = llm_chain.prompt.partial(vector_context=vector_context)
 
     # You will need make_async to actually make this run asynchronoysly

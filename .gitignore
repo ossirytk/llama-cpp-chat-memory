@@ -11,3 +11,5 @@ src/llama_cpp_chat_memory/.chainlit/config.toml
 src/llama_cpp_chat_memory/temp/
 src/llama_cpp_chat_memory/test.py
 src/llama_cpp_chat_memory/chainlit.md
+src/llama_cpp_chat_memory/logs/
+src/llama_cpp_chat_memory/.files/

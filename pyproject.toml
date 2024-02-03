@@ -19,6 +19,7 @@ classifiers = [
 ]
 dependencies = [
 "langchain==0.1.0",
+"langchain-community==0.0.12",
 "chainlit==1.0.100",
 "llama-cpp-python==0.2.28",
 "Pillow==10.0.1",
