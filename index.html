@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="description" content="None" /><link rel="canonical" href="https://ossirytk.github.io/llama-cpp-chat-memory/" />
+      <link rel="shortcut icon" href="img/favicon.ico" />
+    <title>Llama.cpp chat</title>
+    <link rel="stylesheet" href="css/theme.css" />
+    <link rel="stylesheet" href="css/theme_extra.css" />
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/styles/github.min.css" />
+    
+      <script>
+        // Current page data
+        var mkdocs_page_name = "Home";
+        var mkdocs_page_input_path = "index.md";
+        var mkdocs_page_url = "/llama-cpp-chat-memory/";
+      </script>
+    
+    <!--[if lt IE 9]>
+      <script src="js/html5shiv.min.js"></script>
+    <![endif]-->
+      <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/highlight.min.js"></script>
+      <script>hljs.highlightAll();</script> 
+</head>
+
+<body class="wy-body-for-nav" role="document">
+
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side stickynav">
+    <div class="wy-side-scroll">
+      <div class="wy-side-nav-search">
+          <a href="." class="icon icon-home"> Llama.cpp chat
+        </a><div role="search">
+  <form id ="rtd-search-form" class="wy-form" action="./search.html" method="get">
+      <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" title="Type search term here" />
+  </form>
+</div>
+      </div>
+
+      <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul class="current">
+                <li class="toctree-l1 current"><a class="reference internal current" href=".">Home</a>
+    <ul class="current">
+    </ul>
+                </li>
+              </ul>
+              <p class="caption"><span class="caption-text">Quickstart</span></p>
+              <ul>
+                  <li class="toctree-l1"><a class="reference internal" href="getting_started/">Getting started</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="prompt_support/">Prompt Support</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="card_format/">Card Format</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="configs/">Configs</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="preparing_the_env/">Preparing the env</a>
+                  </li>
+              </ul>
+              <p class="caption"><span class="caption-text">The chatbot</span></p>
+              <ul>
+                  <li class="toctree-l1"><a class="reference internal" href="running_the_env/">Running the env</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="running_the_chatbot/">Running the chatbot</a>
+                  </li>
+              </ul>
+              <p class="caption"><span class="caption-text">Working with documents and the vectorstore</span></p>
+              <ul>
+                  <li class="toctree-l1"><a class="reference internal" href="webscraping/">Webscraping</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="creating_embeddings/">Creating embeddings</a>
+                  </li>
+              </ul>
+              <p class="caption"><span class="caption-text">Extras</span></p>
+              <ul>
+                  <li class="toctree-l1"><a class="reference internal" href="examples/">Some Examples</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="UNLICENSE/">License</a>
+                  </li>
+              </ul>
+      </div>
+    </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+      <nav class="wy-nav-top" role="navigation" aria-label="Mobile navigation menu">
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href=".">Llama.cpp chat</a>
+        
+      </nav>
+      <div class="wy-nav-content">
+        <div class="rst-content"><div role="navigation" aria-label="breadcrumbs navigation">
+  <ul class="wy-breadcrumbs">
+    <li><a href="." class="icon icon-home" aria-label="Docs"></a></li>
+      <li class="breadcrumb-item active">Home</li>
+    <li class="wy-breadcrumbs-aside">
+          <a href="https://github.com/ossirytk/llama-cpp-chat-memory/edit/master/docs/index.md" class="icon icon-github"> Edit on GitHub</a>
+    </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+            <div class="section" itemprop="articleBody">
+              
+                <h1 id="llama-cpp-chat-memory">llama-cpp-chat-memory</h1>
+<p>This project is intended as an example and a basic framework for a locally run chatbot with documents. The target user group is developers with some understanding about python and llm framworks. If you want to learn about llm and AI, when you can take a look at my <a href="https://github.com/ossirytk/llm_resources">llm resources for beginners</a> or <a href="https://wikia.schneedc.com/">PygWiki</a>. This project is mainly intended to serve as a more fleshed out tutorial and a basic frame to test various things like document embeddings. For this reason, the chatbot itself is intended to be lightweight and simple. You can also use this chatbot to test models and prompts. The document fetching can be disabled by setting collection to "" in the config files. This leaves you with just a basic character chatbot.</BR></p>
+<p>Everything is designed to run locally. The model is run with llama.cpp and it's python bindings, the UI is Chainlit, the vector database is Chroma and everythin is glued together with Langchain. Document processing uses Spacy and Sentence Transformers and Playwright. There are no dependencies to external api's. Llama.cpp can use gpu acceleration with Cuda and Blas. See the documentation for <a href="https://github.com/abetlen/llama-cpp-python">llama-cpp-python</a> for documentation.</BR></p>
+<p>The chatbot uses character cards as prompts. The supported cards are Tavern and V2. Internal lorebooks are not supported yet. There are several scripts for parsing json lorebooks, pdt, textfiles and scarping web pages for the memory content. Also included are scripts for parsing metadata from documents automatically. </p>
+              
+            </div>
+          </div><footer>
+    <div class="rst-footer-buttons" role="navigation" aria-label="Footer Navigation">
+        <a href="getting_started/" class="btn btn-neutral float-right" title="Getting started">Next <span class="icon icon-circle-arrow-right"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <!-- Copyright etc -->
+  </div>
+
+  Built with <a href="https://www.mkdocs.org/">MkDocs</a> using a <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>.
+</footer>
+          
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+
+  <div class="rst-versions" role="note" aria-label="Versions">
+  <span class="rst-current-version" data-toggle="rst-current-version">
+    
+        <span>
+          <a href="https://github.com/ossirytk/llama-cpp-chat-memory" class="fa fa-github" style="color: #fcfcfc"> GitHub</a>
+        </span>
+    
+    
+    
+      <span><a href="getting_started/" style="color: #fcfcfc">Next &raquo;</a></span>
+    
+  </span>
+</div>
+    <script src="js/jquery-3.6.0.min.js"></script>
+    <script>var base_url = ".";</script>
+    <script src="js/theme_extra.js"></script>
+    <script src="js/theme.js"></script>
+      <script src="search/main.js"></script>
+    <script>
+        jQuery(function () {
+            SphinxRtdTheme.Navigation.enable(true);
+        });
+    </script>
+
+</body>
+</html>
+
+<!--
+MkDocs version : 1.5.3
+Build Date UTC : 2024-02-04 06:11:24.992207+00:00
+-->

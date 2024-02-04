@@ -1,0 +1,264 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><link rel="canonical" href="https://ossirytk.github.io/llama-cpp-chat-memory/configs/" />
+      <link rel="shortcut icon" href="../img/favicon.ico" />
+    <title>Configs - Llama.cpp chat</title>
+    <link rel="stylesheet" href="../css/theme.css" />
+    <link rel="stylesheet" href="../css/theme_extra.css" />
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/styles/github.min.css" />
+    
+      <script>
+        // Current page data
+        var mkdocs_page_name = "Configs";
+        var mkdocs_page_input_path = "configs.md";
+        var mkdocs_page_url = "/llama-cpp-chat-memory/configs/";
+      </script>
+    
+    <!--[if lt IE 9]>
+      <script src="../js/html5shiv.min.js"></script>
+    <![endif]-->
+      <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/highlight.min.js"></script>
+      <script>hljs.highlightAll();</script> 
+</head>
+
+<body class="wy-body-for-nav" role="document">
+
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side stickynav">
+    <div class="wy-side-scroll">
+      <div class="wy-side-nav-search">
+          <a href=".." class="icon icon-home"> Llama.cpp chat
+        </a><div role="search">
+  <form id ="rtd-search-form" class="wy-form" action="../search.html" method="get">
+      <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" title="Type search term here" />
+  </form>
+</div>
+      </div>
+
+      <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="..">Home</a>
+                </li>
+              </ul>
+              <p class="caption"><span class="caption-text">Quickstart</span></p>
+              <ul class="current">
+                  <li class="toctree-l1"><a class="reference internal" href="../getting_started/">Getting started</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../prompt_support/">Prompt Support</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../card_format/">Card Format</a>
+                  </li>
+                  <li class="toctree-l1 current"><a class="reference internal current" href="./">Configs</a>
+    <ul class="current">
+    </ul>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../preparing_the_env/">Preparing the env</a>
+                  </li>
+              </ul>
+              <p class="caption"><span class="caption-text">The chatbot</span></p>
+              <ul>
+                  <li class="toctree-l1"><a class="reference internal" href="../running_the_env/">Running the env</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../running_the_chatbot/">Running the chatbot</a>
+                  </li>
+              </ul>
+              <p class="caption"><span class="caption-text">Working with documents and the vectorstore</span></p>
+              <ul>
+                  <li class="toctree-l1"><a class="reference internal" href="../webscraping/">Webscraping</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../creating_embeddings/">Creating embeddings</a>
+                  </li>
+              </ul>
+              <p class="caption"><span class="caption-text">Extras</span></p>
+              <ul>
+                  <li class="toctree-l1"><a class="reference internal" href="../examples/">Some Examples</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../UNLICENSE/">License</a>
+                  </li>
+              </ul>
+      </div>
+    </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+      <nav class="wy-nav-top" role="navigation" aria-label="Mobile navigation menu">
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="..">Llama.cpp chat</a>
+        
+      </nav>
+      <div class="wy-nav-content">
+        <div class="rst-content"><div role="navigation" aria-label="breadcrumbs navigation">
+  <ul class="wy-breadcrumbs">
+    <li><a href=".." class="icon icon-home" aria-label="Docs"></a></li>
+          <li class="breadcrumb-item">Quickstart</li>
+      <li class="breadcrumb-item active">Configs</li>
+    <li class="wy-breadcrumbs-aside">
+          <a href="https://github.com/ossirytk/llama-cpp-chat-memory/edit/master/docs/configs.md" class="icon icon-github"> Edit on GitHub</a>
+    </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+            <div class="section" itemprop="articleBody">
+              
+                <h3 id="configs">Configs</h3>
+<p>You can change the configuration settings in .env file.</p>
+<p>The available embeddings are llama,spacy and hugginface. Make sure that the config for the chat matches the embeddings that were used to create the chroma collection. </p>
+<p>VECTOR_K is the value for vector storage documents for how many documents should be returned. You might need to change this based on your context and vector store chunk size. BUFFER_K is the size for conversation buffer. The prompt will include last K qustion answer pairs. Having large VECTOR_K and BUFFER_K can overfill the prompt. The default character card is Skynet_V2.png. This is just a basic template.</p>
+<table>
+<thead>
+<tr>
+<th>Config Field</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>MODEL_DIR</td>
+<td>The dir for the models</td>
+</tr>
+<tr>
+<td>MODEL</td>
+<td>model_name.gguf</td>
+</tr>
+<tr>
+<td>MODEL_TYPE</td>
+<td>alpaca/mistral</td>
+</tr>
+<tr>
+<td>LAYERS</td>
+<td>Number of layers to offload to gpu</td>
+</tr>
+<tr>
+<td>CHARACTER_CARD_DIR</td>
+<td>The directory for chracter cards</td>
+</tr>
+<tr>
+<td>CHARACTER_CARD</td>
+<td>character_card.png/yaml/json</td>
+</tr>
+<tr>
+<td>PERSIST_DIRECTORY</td>
+<td>dir for chroma embeddings</td>
+</tr>
+<tr>
+<td>PROMPT_TEMPLATE_DIRECTORY</td>
+<td>Prompt template are stored here</td>
+</tr>
+<tr>
+<td>PROMPT_TEMPLATE</td>
+<td>question_generation_template.json</td>
+</tr>
+<tr>
+<td>REPLACE_YOU</td>
+<td>Replace references to "You" in card with "User"</td>
+</tr>
+<tr>
+<td>KEY_STORAGE_DIRECTORY</td>
+<td>dir for NER keys for chroma</td>
+</tr>
+<tr>
+<td>USE_KEY_STORAGE</td>
+<td>Use NER keys for Chroma metadata</td>
+</tr>
+<tr>
+<td>COLLECTION</td>
+<td>Chroma collection to use. "" to disable Chroma</td>
+</tr>
+<tr>
+<td>QUERY_TYPE</td>
+<td>Embeddings type. "mmr" or "similarity"</td>
+</tr>
+<tr>
+<td>EMBEDDINGS_TYPE</td>
+<td>llama/spacy/hugginface</td>
+</tr>
+<tr>
+<td>FETCH_K</td>
+<td>Fetch k closest embeddings for similiarity</td>
+</tr>
+<tr>
+<td>LAMBDA_MULT</td>
+<td>Lambda for Chroma</td>
+</tr>
+<tr>
+<td>VECTOR_K</td>
+<td>Fetch k closest embeddings for mmr</td>
+</tr>
+<tr>
+<td>BUFFER_K</td>
+<td>Buffer last k exchanges to conversation context</td>
+</tr>
+<tr>
+<td>ROPE_CONTEXT</td>
+<td>Rope context for rope scaling</td>
+</tr>
+<tr>
+<td>N_CTX</td>
+<td>Context size</td>
+</tr>
+<tr>
+<td>USE_MAX_TOKENS</td>
+<td>Use max tokens. True/False</td>
+</tr>
+<tr>
+<td>MAX_TOKENS</td>
+<td>Max tokens</td>
+</tr>
+</tbody>
+</table>
+              
+            </div>
+          </div><footer>
+    <div class="rst-footer-buttons" role="navigation" aria-label="Footer Navigation">
+        <a href="../card_format/" class="btn btn-neutral float-left" title="Card Format"><span class="icon icon-circle-arrow-left"></span> Previous</a>
+        <a href="../preparing_the_env/" class="btn btn-neutral float-right" title="Preparing the env">Next <span class="icon icon-circle-arrow-right"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <!-- Copyright etc -->
+  </div>
+
+  Built with <a href="https://www.mkdocs.org/">MkDocs</a> using a <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>.
+</footer>
+          
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+
+  <div class="rst-versions" role="note" aria-label="Versions">
+  <span class="rst-current-version" data-toggle="rst-current-version">
+    
+        <span>
+          <a href="https://github.com/ossirytk/llama-cpp-chat-memory" class="fa fa-github" style="color: #fcfcfc"> GitHub</a>
+        </span>
+    
+    
+      <span><a href="../card_format/" style="color: #fcfcfc">&laquo; Previous</a></span>
+    
+    
+      <span><a href="../preparing_the_env/" style="color: #fcfcfc">Next &raquo;</a></span>
+    
+  </span>
+</div>
+    <script src="../js/jquery-3.6.0.min.js"></script>
+    <script>var base_url = "..";</script>
+    <script src="../js/theme_extra.js"></script>
+    <script src="../js/theme.js"></script>
+      <script src="../search/main.js"></script>
+    <script>
+        jQuery(function () {
+            SphinxRtdTheme.Navigation.enable(true);
+        });
+    </script>
+
+</body>
+</html>
