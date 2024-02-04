@@ -2,6 +2,7 @@
 .env
 .env_test
 dist/
+site/
 __pycache__/
 src/llama_cpp_chat_memory/chroma_storage/
 src/llama_cpp_chat_memory/character_storage/
