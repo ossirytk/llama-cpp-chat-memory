@@ -10,8 +10,8 @@ import chromadb
 from chromadb.config import Settings
 from custom_llm_classes.custom_spacy_embeddings import CustomSpacyEmbeddings
 from dotenv import find_dotenv, load_dotenv
-from langchain.document_loaders import TextLoader
 from langchain.text_splitter import RecursiveCharacterTextSplitter
+from langchain_community.document_loaders import TextLoader
 from langchain_community.embeddings import HuggingFaceEmbeddings, LlamaCppEmbeddings
 from langchain_community.vectorstores import Chroma
 
@@ -32,6 +32,7 @@ def main(
     model_dir = getenv("MODEL_DIR")
     model = getenv("MODEL")
     model_source = join(model_dir, model)
+    embeddings_model = getenv("EMBEDDINGS_MODEL")
 
     documents_pattern = os.path.join(documents_directory, "*.txt")
     documents_paths_txt = glob.glob(documents_pattern)
@@ -73,13 +74,16 @@ def main(
         )
     elif embeddings_type == "spacy":
         logging.info("Using spacy embeddigs")
-        embedder = CustomSpacyEmbeddings(model_path="en_core_web_lg")
+        # embedder = CustomSpacyEmbeddings(model_path="en_core_web_lg")
+        embedder = CustomSpacyEmbeddings(model_path=embeddings_model)
     elif embeddings_type == "huggingface":
         logging.info("Using huggingface embeddigs")
-        model_name = "sentence-transformers/all-mpnet-base-v2"
+        # model_name = "sentence-transformers/all-mpnet-base-v2"
         model_kwargs = {"device": "cpu"}
         encode_kwargs = {"normalize_embeddings": False}
-        embedder = HuggingFaceEmbeddings(model_name=model_name, model_kwargs=model_kwargs, encode_kwargs=encode_kwargs)
+        embedder = HuggingFaceEmbeddings(
+            model_name=embeddings_model, model_kwargs=model_kwargs, encode_kwargs=encode_kwargs
+        )
 
     else:
         error_message = f"Unsupported embeddings type: {embeddings_type}"

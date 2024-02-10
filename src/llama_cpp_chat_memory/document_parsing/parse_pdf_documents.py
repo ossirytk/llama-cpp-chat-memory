@@ -30,6 +30,7 @@ def main(
     model_dir = getenv("MODEL_DIR")
     model = getenv("MODEL")
     model_source = join(model_dir, model)
+    embeddings_model = getenv("EMBEDDINGS_MODEL")
 
     documents_pattern = os.path.join(documents_directory, "*.pdf")
     logging.debug(f"documents search pattern: {documents_pattern}")
@@ -57,13 +58,16 @@ def main(
         )
     elif embeddings_type == "spacy":
         logging.info("Using spacy embeddigs")
-        embedder = CustomSpacyEmbeddings(model_path="en_core_web_lg")
+        # embedder = CustomSpacyEmbeddings(model_path="en_core_web_lg")
+        embedder = CustomSpacyEmbeddings(model_path=embeddings_model)
     elif embeddings_type == "huggingface":
         logging.info("Using huggingface embeddigs")
-        model_name = "sentence-transformers/all-mpnet-base-v2"
+        # model_name = "sentence-transformers/all-mpnet-base-v2"
         model_kwargs = {"device": "cpu"}
         encode_kwargs = {"normalize_embeddings": False}
-        embedder = HuggingFaceEmbeddings(model_name=model_name, model_kwargs=model_kwargs, encode_kwargs=encode_kwargs)
+        embedder = HuggingFaceEmbeddings(
+            model_name=embeddings_model, model_kwargs=model_kwargs, encode_kwargs=encode_kwargs
+        )
 
     else:
         error_message = f"Unsupported embeddings type: {embeddings_type}"

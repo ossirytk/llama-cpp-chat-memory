@@ -22,6 +22,7 @@ USE_KEY_STORAGE | Use NER keys for Chroma metadata
 COLLECTION | Chroma collection to use. "" to disable Chroma
 QUERY_TYPE | Embeddings type. "mmr" or "similarity"
 EMBEDDINGS_TYPE | llama/spacy/hugginface
+EMBEDDINGS_model | spacy/hugginface model name (needs to be installed)
 FETCH_K | Fetch k closest embeddings for similiarity
 LAMBDA_MULT | Lambda for Chroma
 VECTOR_K | Fetch k closest embeddings for mmr

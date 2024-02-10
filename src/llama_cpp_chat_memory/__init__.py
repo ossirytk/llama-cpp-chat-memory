@@ -27,40 +27,19 @@ if not exists("./logs/chat.log"):
 
 for handler in logging.root.handlers[:]:
     logging.root.removeHandler(handler)
-CHAT_LOG = logging.getLogger(LOGGIN_HANDLE)
+
 logging.basicConfig(
-    filename="./logs/chat.log", format="%(asctime)s %(levelname)s:%(message)s", encoding="utf-8", level=logging.DEBUG
+    filename="./logs/chat.log",
+    format="%(asctime)s %(levelname)s:%(message)s",
+    encoding="utf-8",
+    level=logging.INFO,
 )
+CHAT_LOG = logging.getLogger(LOGGIN_HANDLE)
 
 
 load_dotenv(find_dotenv())
 CARD_AVATAR = None
 CHARACTER_NAME = None
-
-question_generation_template = """
-{llama_instruction}
-Continue the chat dialogue below. Write {character}'s next reply in a chat between User and {character}. Answer in first person. Write a single reply only.
-
-{llama_input}
-Description:
-{description}
-
-Scenario:
-{scenario}
-
-Message Examples:
-{mes_example}
-
-Context:
-{vector_context}
-
-Current conversation:
-{history}
-
-Question: {input}
-
-{llama_response}
-"""  # noqa: E501
 
 
 # Get metadata filter keys for this collection
@@ -78,6 +57,63 @@ def parse_keys():
             CHAT_LOG.debug(f"Loading filter list from: {key_storage_path}")
             CHAT_LOG.debug(f"Filter keys: {all_keys}")
     return all_keys
+
+
+def parse_question_refining_prompt():
+    prompt_template_dir = getenv("PROMPT_TEMPLATE_DIRECTORY")
+    prompt_template_name = "question_refining_template2.json"
+    prompt_template_path = join(prompt_template_dir, prompt_template_name)
+
+    prompt = load_prompt(prompt_template_path)
+    # Supported model types are mistral and alpaca
+    # Feel free to add things here
+    if getenv("MODEL_TYPE") == "alpaca":
+        llama_instruction = "### Instruction:"
+        llama_input = "### Input:"
+        llama_response = "### Response:"
+    elif getenv("MODEL_TYPE") == "mistral":
+        llama_instruction = "[INST]\n"
+        llama_input = ""
+        llama_response = "[/INST]\n"
+    else:
+        llama_instruction = ""
+        llama_input = ""
+        llama_response = ""
+
+    filled_prompt = prompt.partial(
+        llama_input=llama_input,
+        llama_instruction=llama_instruction,
+        llama_response=llama_response,
+        vector_context=" ",
+    )
+    return filled_prompt
+
+
+def parse_question_refining_metadata_prompt():
+    prompt_template_dir = getenv("PROMPT_TEMPLATE_DIRECTORY")
+    prompt_metadata_template_name = "question_refining_metadata_template.json"
+    metadata_prompt_template_path = join(prompt_template_dir, prompt_metadata_template_name)
+    metadata_prompt = load_prompt(metadata_prompt_template_path)
+    if getenv("MODEL_TYPE") == "alpaca":
+        llama_instruction = "### Instruction:"
+        llama_input = "### Input:"
+        llama_response = "### Response:"
+    elif getenv("MODEL_TYPE") == "mistral":
+        llama_instruction = "[INST]\n"
+        llama_input = ""
+        llama_response = "[/INST]\n"
+    else:
+        llama_instruction = ""
+        llama_input = ""
+        llama_response = ""
+
+    filled_metadata_prompt = metadata_prompt.partial(
+        llama_input=llama_input,
+        llama_instruction=llama_instruction,
+        llama_response=llama_response,
+        vector_context=" ",
+    )
+    return filled_metadata_prompt
 
 
 def parse_prompt():
@@ -160,14 +196,22 @@ def parse_prompt():
         llama_instruction = "### Instruction:"
         llama_input = "### Input:"
         llama_response = "### Response:"
+        llama_endtoken = ""
     elif getenv("MODEL_TYPE") == "mistral":
-        llama_instruction = "[INST]\n"
+        llama_instruction = "[INST]"
         llama_input = ""
         llama_response = "[/INST]\n"
+        llama_endtoken = ""
+    elif getenv("MODEL_TYPE") == "chatml":
+        llama_instruction = "<|system|>"
+        llama_input = "<|user|>"
+        llama_response = "<|assistant|>\n"
+        llama_endtoken = "</s>"
     else:
         llama_instruction = ""
         llama_input = ""
         llama_response = ""
+        llama_endtoken = ""
     description = card["description"] if "description" in card else card["char_persona"]
     scenario = card["scenario"] if "scenario" in card else card["world_scenario"]
     mes_example = card["mes_example"] if "mes_example" in card else card["example_dialogue"]
@@ -209,6 +253,7 @@ def parse_prompt():
         llama_input=llama_input,
         llama_instruction=llama_instruction,
         llama_response=llama_response,
+        llama_endtoken=llama_endtoken,
         vector_context=" ",
     )
 
@@ -235,6 +280,7 @@ def instantiate_retriever():
     model_dir = getenv("MODEL_DIR")
     model = getenv("MODEL")
     model_source = join(model_dir, model)
+    embeddings_model = getenv("EMBEDDINGS_MODEL")
 
     client = chromadb.PersistentClient(path=getenv("PERSIST_DIRECTORY"), settings=Settings(anonymized_telemetry=False))
 
@@ -253,13 +299,16 @@ def instantiate_retriever():
         )
     elif embeddings_type == "spacy":
         CHAT_LOG.info("Using spacy embeddigs")
-        embedder = CustomSpacyEmbeddings()
+        # embedder = CustomSpacyEmbeddings(model_path="en_core_web_lg")
+        embedder = CustomSpacyEmbeddings(model_path=embeddings_model)
     elif embeddings_type == "huggingface":
         CHAT_LOG.info("Using huggingface embeddigs")
-        model_name = "sentence-transformers/all-mpnet-base-v2"
+        # model_name = "sentence-transformers/all-mpnet-base-v2"
         model_kwargs = {"device": "cpu"}
         encode_kwargs = {"normalize_embeddings": False}
-        embedder = HuggingFaceEmbeddings(model_name=model_name, model_kwargs=model_kwargs, encode_kwargs=encode_kwargs)
+        embedder = HuggingFaceEmbeddings(
+            model_name=embeddings_model, model_kwargs=model_kwargs, encode_kwargs=encode_kwargs
+        )
     else:
         error_message = f"Unsupported embeddings type: {embeddings_type}"
         raise ValueError(error_message)
@@ -307,6 +356,8 @@ def instantiate_llm():
 
 
 ALL_KEYS = parse_keys()
+QUESTION_REFINING_PROMPT = parse_question_refining_prompt()
+QUSTION_REFINING_METADATA_PROMPT = parse_question_refining_metadata_prompt()
 PROMPT = parse_prompt()
 AVATAR_IMAGE = get_avatar_image()
 USE_AVATAR_IMAGE = exists(AVATAR_IMAGE)
