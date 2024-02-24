@@ -1,11 +1,13 @@
 ### Webscraping
-You can scrape web pages to text documents in order to use them as documents for chroma. The web scraping uses playwright and requires that the web engines are installed. After starting the virtual env run:</BR>
+You can scrape web pages to text documents in order to use them as documents for chroma. 
+
+Optional. The old web scraping uses playwright and requires that the web engines are installed. After starting the virtual env run:</BR>
 
 ```
 playwright install
 ```
 
-The web scraping is prepared with config files in web_scrape_configs folder. The format is in json. See the example files for the specfics. The current impelementation is unoptimized, so use with caution for a large number of pages. See the example web_scrape_configs for config format. This will scrape the given web pages and format into a single text document.</BR>
+The web scraping is prepared with config files in web_scrape_configs folder. The format is in json. See the example files for the specfics. A number of regex filters are used to clean the scrape data. You can modify and add filters if you want. The filters are stored in the src/llama_cpp_chat_memory/run_files/filters/web_scrape_filters.json file.</BR>
 
 To run the scrape run:
 ```
@@ -14,6 +16,6 @@ python -m document_parsing.web_scraper</BR>
 
 Optional param         | Description
 ---------------------- | -------------
---data-directory       | The directory where your text files are stored. Default "./documents/skynet"
+--data-directory       | The directory where your text files are stored. Default "./run_files/documents/skynet"
 --collection-name      | The name of the collection. Default "skynet"
---web-scrape-directory | The config file to be used for the webscrape. Default "./web_scrape_configs/"
+--web-scrape-directory | The config file to be used for the webscrape. Default "./run_files/web_scrape_configs/"

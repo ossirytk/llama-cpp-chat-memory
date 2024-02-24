@@ -56,37 +56,11 @@ def parse_keys():
             all_keys = json.loads(content)
             CHAT_LOG.debug(f"Loading filter list from: {key_storage_path}")
             CHAT_LOG.debug(f"Filter keys: {all_keys}")
-    return all_keys
 
-
-def parse_question_refining_prompt():
-    prompt_template_dir = getenv("PROMPT_TEMPLATE_DIRECTORY")
-    prompt_template_name = "question_refining_template2.json"
-    prompt_template_path = join(prompt_template_dir, prompt_template_name)
-
-    prompt = load_prompt(prompt_template_path)
-    # Supported model types are mistral and alpaca
-    # Feel free to add things here
-    if getenv("MODEL_TYPE") == "alpaca":
-        llama_instruction = "### Instruction:"
-        llama_input = "### Input:"
-        llama_response = "### Response:"
-    elif getenv("MODEL_TYPE") == "mistral":
-        llama_instruction = "[INST]\n"
-        llama_input = ""
-        llama_response = "[/INST]\n"
+    if all_keys is not None and "Content" in all_keys:
+        return all_keys["Content"]
     else:
-        llama_instruction = ""
-        llama_input = ""
-        llama_response = ""
-
-    filled_prompt = prompt.partial(
-        llama_input=llama_input,
-        llama_instruction=llama_instruction,
-        llama_response=llama_response,
-        vector_context=" ",
-    )
-    return filled_prompt
+        return all_keys
 
 
 def parse_question_refining_metadata_prompt():
@@ -98,19 +72,23 @@ def parse_question_refining_metadata_prompt():
         llama_instruction = "### Instruction:"
         llama_input = "### Input:"
         llama_response = "### Response:"
+        llama_endtoken = ""
     elif getenv("MODEL_TYPE") == "mistral":
         llama_instruction = "[INST]\n"
         llama_input = ""
         llama_response = "[/INST]\n"
+        llama_endtoken = ""
     else:
         llama_instruction = ""
         llama_input = ""
         llama_response = ""
+        llama_endtoken = ""
 
     filled_metadata_prompt = metadata_prompt.partial(
         llama_input=llama_input,
         llama_instruction=llama_instruction,
         llama_response=llama_response,
+        llama_endtoken=llama_endtoken,
         vector_context=" ",
     )
     return filled_metadata_prompt
@@ -356,7 +334,6 @@ def instantiate_llm():
 
 
 ALL_KEYS = parse_keys()
-QUESTION_REFINING_PROMPT = parse_question_refining_prompt()
 QUSTION_REFINING_METADATA_PROMPT = parse_question_refining_metadata_prompt()
 PROMPT = parse_prompt()
 AVATAR_IMAGE = get_avatar_image()

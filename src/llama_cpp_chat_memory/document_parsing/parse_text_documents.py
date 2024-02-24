@@ -50,6 +50,9 @@ def main(
     with open(key_storage_path, encoding="utf-8") as key_file:
         content = key_file.read()
     all_keys = json.loads(content)
+    if "Content" in all_keys:
+        all_keys = all_keys["Content"]
+
     logging.debug(f"Loading filter list from: {key_storage_path}")
     # logging.debug(f"Filter keys: {all_keys}")
 
@@ -113,7 +116,7 @@ if __name__ == "__main__":
     parser.add_argument(
         "--data-directory",
         type=str,
-        default="./documents/skynet",
+        default="./run_files/documents/skynet",
         help="The directory where your text files are stored",
     )
     parser.add_argument(
@@ -125,28 +128,28 @@ if __name__ == "__main__":
     parser.add_argument(
         "--persist-directory",
         type=str,
-        default="./character_storage/",
+        default="./run_files/character_storage/",
         help="The directory where you want to store the Chroma collection",
     )
 
     parser.add_argument(
         "--key-storage",
         type=str,
-        default="./key_storage/",
-        help="The directory where you want to store the Chroma collection metadata keys",
+        default="./run_files/key_storage/",
+        help="The directory for the collection metadata keys",
     )
 
     parser.add_argument(
         "--chunk-size",
         type=int,
-        default=1024,
+        default=2048,
         help="The text chunk size for parsing",
     )
 
     parser.add_argument(
         "--chunk-overlap",
         type=int,
-        default=0,
+        default=1024,
         help="The overlap for text chunks for parsing",
     )
     parser.add_argument(
