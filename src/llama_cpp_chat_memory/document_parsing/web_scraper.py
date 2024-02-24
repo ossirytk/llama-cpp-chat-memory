@@ -120,14 +120,14 @@ if __name__ == "__main__":
         "--collection-name",
         type=str,
         default="skynet",
-        help="The name of the Chroma collection",
+        help="The name of the collection. Should match eventual Choma collection",
     )
 
     parser.add_argument(
         "--web-scrape-directory",
         type=str,
         default="./web_scrape_configs/",
-        help="The directory where you want to store the Chroma collection",
+        help="The config file to be used for the webscrape",
     )
 
     # Parse arguments

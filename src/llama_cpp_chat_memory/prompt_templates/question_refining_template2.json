@@ -1,0 +1,10 @@
+{
+    "_type": "prompt",
+    "input_variables": [
+        "llama_instruction",
+        "llama_input",
+        "input",
+        "llama_response"
+    ],
+    "template": "{llama_instruction}\nYou are an assistant to the User. Your task is to hep generate quality search queries so the user can look up more information online. Create one search query from following text. Return only the query.\n\nQuestion: {input}\n\n{llama_response}"
+}
