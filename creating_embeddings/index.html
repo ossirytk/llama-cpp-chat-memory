@@ -67,6 +67,8 @@
               <ul class="current">
                   <li class="toctree-l1"><a class="reference internal" href="../webscraping/">Webscraping</a>
                   </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../named_entity_recognition/">Named Entity Recognition(NER)</a>
+                  </li>
                   <li class="toctree-l1 current"><a class="reference internal current" href="./">Creating embeddings</a>
     <ul class="current">
     </ul>
@@ -132,11 +134,49 @@ python -m document_parsing.parse_json_documents --embeddings-type spacy
 python -m document_parsing.test_embeddings  --collection-name skynet2 --query &quot;Who is John Connor&quot; --embeddings-type spacy
 python -m document_parsing.test_embeddings  --collection-name hogwarts --query &quot;Who is Charles Rookwood'&quot; --embeddings-type spacy
 </code></pre>
+<table>
+<thead>
+<tr>
+<th>Optional param</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>--data-directory</td>
+<td>The directory where your text files are stored. Default "./documents/skynet"</td>
+</tr>
+<tr>
+<td>--collection-name</td>
+<td>The name of the collection. Default "skynet"</td>
+</tr>
+<tr>
+<td>--persist-directory</td>
+<td>The directory where you want to store the Chroma collection. Default "./character_storage/"</td>
+</tr>
+<tr>
+<td>--key-storage</td>
+<td>The directory for the collection metadata keys Need to be created with textacy parsing. Default "./key_storage/"</td>
+</tr>
+<tr>
+<td>--chunk-size</td>
+<td>The text chunk size for parsing. Default "1024"</td>
+</tr>
+<tr>
+<td>--chunk-overlap</td>
+<td>The overlap for text chunks for parsing. Default "0"</td>
+</tr>
+<tr>
+<td>--embeddings-type</td>
+<td>The chosen embeddings type. Default "spacy"</td>
+</tr>
+</tbody>
+</table>
               
             </div>
           </div><footer>
     <div class="rst-footer-buttons" role="navigation" aria-label="Footer Navigation">
-        <a href="../webscraping/" class="btn btn-neutral float-left" title="Webscraping"><span class="icon icon-circle-arrow-left"></span> Previous</a>
+        <a href="../named_entity_recognition/" class="btn btn-neutral float-left" title="Named Entity Recognition(NER)"><span class="icon icon-circle-arrow-left"></span> Previous</a>
         <a href="../examples/" class="btn btn-neutral float-right" title="Some Examples">Next <span class="icon icon-circle-arrow-right"></span></a>
     </div>
 
@@ -164,7 +204,7 @@ python -m document_parsing.test_embeddings  --collection-name hogwarts --query &
         </span>
     
     
-      <span><a href="../webscraping/" style="color: #fcfcfc">&laquo; Previous</a></span>
+      <span><a href="../named_entity_recognition/" style="color: #fcfcfc">&laquo; Previous</a></span>
     
     
       <span><a href="../examples/" style="color: #fcfcfc">Next &raquo;</a></span>

@@ -3,18 +3,18 @@
 <head>
     <meta charset="utf-8" />
     <meta http-equiv="X-UA-Compatible" content="IE=edge" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><link rel="canonical" href="https://ossirytk.github.io/llama-cpp-chat-memory/prompt_support/" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><link rel="canonical" href="https://ossirytk.github.io/llama-cpp-chat-memory/named_entity_recognition/" />
       <link rel="shortcut icon" href="../img/favicon.ico" />
-    <title>Prompt Support - Llama.cpp chat</title>
+    <title>Named Entity Recognition(NER) - Llama.cpp chat</title>
     <link rel="stylesheet" href="../css/theme.css" />
     <link rel="stylesheet" href="../css/theme_extra.css" />
         <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/styles/github.min.css" />
     
       <script>
         // Current page data
-        var mkdocs_page_name = "Prompt Support";
-        var mkdocs_page_input_path = "prompt_support.md";
-        var mkdocs_page_url = "/llama-cpp-chat-memory/prompt_support/";
+        var mkdocs_page_name = "Named Entity Recognition(NER)";
+        var mkdocs_page_input_path = "named_entity_recognition.md";
+        var mkdocs_page_url = "/llama-cpp-chat-memory/named_entity_recognition/";
       </script>
     
     <!--[if lt IE 9]>
@@ -44,12 +44,10 @@
                 </li>
               </ul>
               <p class="caption"><span class="caption-text">Quickstart</span></p>
-              <ul class="current">
+              <ul>
                   <li class="toctree-l1"><a class="reference internal" href="../getting_started/">Getting started</a>
                   </li>
-                  <li class="toctree-l1 current"><a class="reference internal current" href="./">Prompt Support</a>
-    <ul class="current">
-    </ul>
+                  <li class="toctree-l1"><a class="reference internal" href="../prompt_support/">Prompt Support</a>
                   </li>
                   <li class="toctree-l1"><a class="reference internal" href="../card_format/">Card Format</a>
                   </li>
@@ -66,10 +64,12 @@
                   </li>
               </ul>
               <p class="caption"><span class="caption-text">Working with documents and the vectorstore</span></p>
-              <ul>
+              <ul class="current">
                   <li class="toctree-l1"><a class="reference internal" href="../webscraping/">Webscraping</a>
                   </li>
-                  <li class="toctree-l1"><a class="reference internal" href="../named_entity_recognition/">Named Entity Recognition(NER)</a>
+                  <li class="toctree-l1 current"><a class="reference internal current" href="./">Named Entity Recognition(NER)</a>
+    <ul class="current">
+    </ul>
                   </li>
                   <li class="toctree-l1"><a class="reference internal" href="../creating_embeddings/">Creating embeddings</a>
                   </li>
@@ -95,10 +95,10 @@
         <div class="rst-content"><div role="navigation" aria-label="breadcrumbs navigation">
   <ul class="wy-breadcrumbs">
     <li><a href=".." class="icon icon-home" aria-label="Docs"></a></li>
-          <li class="breadcrumb-item">Quickstart</li>
-      <li class="breadcrumb-item active">Prompt Support</li>
+          <li class="breadcrumb-item">Working with documents and the vectorstore</li>
+      <li class="breadcrumb-item active">Named Entity Recognition(NER)</li>
     <li class="wy-breadcrumbs-aside">
-          <a href="https://github.com/ossirytk/llama-cpp-chat-memory/edit/master/docs/prompt_support.md" class="icon icon-github"> Edit on GitHub</a>
+          <a href="https://github.com/ossirytk/llama-cpp-chat-memory/edit/master/docs/named_entity_recognition.md" class="icon icon-github"> Edit on GitHub</a>
     </li>
   </ul>
   <hr/>
@@ -106,15 +106,39 @@
           <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
             <div class="section" itemprop="articleBody">
               
-                <h3 id="prompt-support">Prompt Support</h3>
-<p>Supports alpaca and mistral text prompts, V2 and tavern style json and yaml files and V2 and tavern png cards. Avatar images need to be in the same folder as the prompt file. V2 and Tavern png files get a copy of the image without exif data in the project temp file. Inbuilt lorebooks are currently not supported</p>
-<p>See <a href="https://chub.ai/">Chub.ai</a> for some character cards or make your own with <a href="https://zoltanai.github.io/character-editor/">character editor</a>.<BR></p>
+                <h3 id="named-entity-recognitionner">Named Entity Recognition(NER)</h3>
+<p>You can use textacy_parsing script for generating document metadata keys automatically. The scripts are a modified version of textacy code updated to run with the current spacy version. The script uses a spacy embeddings model to process a text document for a json metadata keyfile. The include positions are: "PROPN", "NOUN", "ADJ". The includes entities are: "PRODUCT", "EVENT", "FAC", "NORP", "PERSON", "ORG", "GPE", "LOC", "DATE", "TIME", "WORK_OF_ART". For details see <a href="https://spacy.io/usage/linguistic-features">Spacy linguistic features</a> and <a href="https://spacy.io/models/en">Model NER labels</a>. The instructions expect en model, but spacy supports a wide range of models.</p>
+<p>You can create ner metadata list with</p>
+<pre><code>python -m document_parsing.textacy_parsing
+</code></pre>
+<table>
+<thead>
+<tr>
+<th>Optional param</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>--data-directory</td>
+<td>The directory where your text files are stored. Default "./documents/skynet"</td>
+</tr>
+<tr>
+<td>--collection-name</td>
+<td>The name of the collection Will be used as name and location for the keyfile. Default "skynet"</td>
+</tr>
+<tr>
+<td>--key-storage</td>
+<td>The directory for the collection metadata keys. Default "./key_storage/"</td>
+</tr>
+</tbody>
+</table>
               
             </div>
           </div><footer>
     <div class="rst-footer-buttons" role="navigation" aria-label="Footer Navigation">
-        <a href="../getting_started/" class="btn btn-neutral float-left" title="Getting started"><span class="icon icon-circle-arrow-left"></span> Previous</a>
-        <a href="../card_format/" class="btn btn-neutral float-right" title="Card Format">Next <span class="icon icon-circle-arrow-right"></span></a>
+        <a href="../webscraping/" class="btn btn-neutral float-left" title="Webscraping"><span class="icon icon-circle-arrow-left"></span> Previous</a>
+        <a href="../creating_embeddings/" class="btn btn-neutral float-right" title="Creating embeddings">Next <span class="icon icon-circle-arrow-right"></span></a>
     </div>
 
   <hr/>
@@ -141,10 +165,10 @@
         </span>
     
     
-      <span><a href="../getting_started/" style="color: #fcfcfc">&laquo; Previous</a></span>
+      <span><a href="../webscraping/" style="color: #fcfcfc">&laquo; Previous</a></span>
     
     
-      <span><a href="../card_format/" style="color: #fcfcfc">Next &raquo;</a></span>
+      <span><a href="../creating_embeddings/" style="color: #fcfcfc">Next &raquo;</a></span>
     
   </span>
 </div>

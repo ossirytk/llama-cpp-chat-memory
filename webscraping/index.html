@@ -69,6 +69,8 @@
     <ul class="current">
     </ul>
                   </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../named_entity_recognition/">Named Entity Recognition(NER)</a>
+                  </li>
                   <li class="toctree-l1"><a class="reference internal" href="../creating_embeddings/">Creating embeddings</a>
                   </li>
               </ul>
@@ -108,17 +110,38 @@
 <p>You can scrape web pages to text documents in order to use them as documents for chroma. The web scraping uses playwright and requires that the web engines are installed. After starting the virtual env run:</BR></p>
 <pre><code>playwright install
 </code></pre>
-<p>The web scraping is prepared with config files in web_scrape_configs folder. The format is in json. See the example files for the specfics. The current impelemntation is unoptimized, so use with caution for a large number of pages.</BR></p>
+<p>The web scraping is prepared with config files in web_scrape_configs folder. The format is in json. See the example files for the specfics. The current impelementation is unoptimized, so use with caution for a large number of pages. See the example web_scrape_configs for config format. This will scrape the given web pages and format into a single text document.</BR></p>
 <p>To run the scrape run:</p>
 <pre><code>python -m document_parsing.web_scraper&lt;/BR&gt;
 </code></pre>
-<p>See --help for params</p>
+<table>
+<thead>
+<tr>
+<th>Optional param</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>--data-directory</td>
+<td>The directory where your text files are stored. Default "./documents/skynet"</td>
+</tr>
+<tr>
+<td>--collection-name</td>
+<td>The name of the collection. Default "skynet"</td>
+</tr>
+<tr>
+<td>--web-scrape-directory</td>
+<td>The config file to be used for the webscrape. Default "./web_scrape_configs/"</td>
+</tr>
+</tbody>
+</table>
               
             </div>
           </div><footer>
     <div class="rst-footer-buttons" role="navigation" aria-label="Footer Navigation">
         <a href="../running_the_chatbot/" class="btn btn-neutral float-left" title="Running the chatbot"><span class="icon icon-circle-arrow-left"></span> Previous</a>
-        <a href="../creating_embeddings/" class="btn btn-neutral float-right" title="Creating embeddings">Next <span class="icon icon-circle-arrow-right"></span></a>
+        <a href="../named_entity_recognition/" class="btn btn-neutral float-right" title="Named Entity Recognition(NER)">Next <span class="icon icon-circle-arrow-right"></span></a>
     </div>
 
   <hr/>
@@ -148,7 +171,7 @@
       <span><a href="../running_the_chatbot/" style="color: #fcfcfc">&laquo; Previous</a></span>
     
     
-      <span><a href="../creating_embeddings/" style="color: #fcfcfc">Next &raquo;</a></span>
+      <span><a href="../named_entity_recognition/" style="color: #fcfcfc">Next &raquo;</a></span>
     
   </span>
 </div>
