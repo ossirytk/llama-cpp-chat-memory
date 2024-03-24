@@ -106,7 +106,7 @@
           <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
             <div class="section" itemprop="articleBody">
               
-                <h3 id="configs">Configs</h3>
+                <h3 id="basic-configs">Basic Configs</h3>
 <p>You can change the configuration settings in .env file.</p>
 <p>The available embeddings are llama,spacy and hugginface. Make sure that the config for the chat matches the embeddings that were used to create the chroma collection. </p>
 <p>VECTOR_K is the value for vector storage documents for how many documents should be returned. You might need to change this based on your context and vector store chunk size. BUFFER_K is the size for conversation buffer. The prompt will include last K qustion answer pairs. Having large VECTOR_K and BUFFER_K can overfill the prompt. The default character card is Skynet_V2.png. This is just a basic template.</p>
@@ -216,6 +216,11 @@
 </tr>
 </tbody>
 </table>
+<h3 id="general-configs">General Configs</h3>
+<p>Other configs are found in the run_files folder. These include Webscrape configs, ner parse configs and filter configs. </p>
+<p>Filters folder defines the general webscrape filters to clean the documents. This file uses regex and can easily be modified to add extra filtering.</p>
+<p>Parse_configs defines the expected csv column structure and ner type parsing. This includes noun engrams, entities, noun chunks and parse type.</p>
+<p>Web scrape configs define the web pages fo a scrape. This is convinient if you want to scrape multiple pages.</p>
               
             </div>
           </div><footer>

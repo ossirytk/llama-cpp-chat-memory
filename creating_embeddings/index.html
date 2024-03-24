@@ -124,10 +124,13 @@ For pdf files there is a pdf file of short stories from Fyodor Dostoyevsky inclu
 NOTE: Textacy parsing will create a key file in key_storage that can be used by text parsing. Json files will create keys automatically if present in json file.</p>
 <pre><code>python -m document_parsing.textacy_parsing --collection-name skynet --embeddings-type spacy
 </code></pre>
-<p>Parse the documents with</p>
-<pre><code>python -m document_parsing.parse_text_documents --embeddings-type llama
-python -m document_parsing.parse_text_documents --collection-name skynet2 --embeddings-type spacy
-python -m document_parsing.parse_json_documents --embeddings-type spacy
+<p>Parse csv to text</p>
+<pre><code>python -m document_parsing.parse_csv_to_text
+</code></pre>
+<p>Parse the documents with </p>
+<pre><code>python -m document_parsing.parse_text_documents
+python -m document_parsing.parse_text_documents
+python -m document_parsing.parse_json_documents
 </code></pre>
 <p>You can test the embeddings with</p>
 <pre><code>python -m document_parsing.test_embeddings  --collection-name skynet --query &quot;Who is John Connor&quot; --embeddings-type llama
@@ -137,14 +140,14 @@ python -m document_parsing.test_embeddings  --collection-name hogwarts --query &
 <table>
 <thead>
 <tr>
-<th>Optional param</th>
+<th>Optional params</th>
 <th>Description</th>
 </tr>
 </thead>
 <tbody>
 <tr>
 <td>--data-directory</td>
-<td>The directory where your text files are stored. Default "./documents/skynet"</td>
+<td>The directory where your text files are stored. Default "./run_files/documents/skynet"</td>
 </tr>
 <tr>
 <td>--collection-name</td>
@@ -152,11 +155,11 @@ python -m document_parsing.test_embeddings  --collection-name hogwarts --query &
 </tr>
 <tr>
 <td>--persist-directory</td>
-<td>The directory where you want to store the Chroma collection. Default "./character_storage/"</td>
+<td>The directory where you want to store the Chroma collection. Default "./run_files/character_storage/"</td>
 </tr>
 <tr>
 <td>--key-storage</td>
-<td>The directory for the collection metadata keys Need to be created with textacy parsing. Default "./key_storage/"</td>
+<td>The directory for the collection metadata keys Need to be created with textacy parsing. Default "./run_files/key_storage/"</td>
 </tr>
 <tr>
 <td>--chunk-size</td>

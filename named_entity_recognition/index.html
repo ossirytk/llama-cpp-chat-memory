@@ -107,9 +107,153 @@
             <div class="section" itemprop="articleBody">
               
                 <h3 id="named-entity-recognitionner">Named Entity Recognition(NER)</h3>
-<p>You can use textacy_parsing script for generating document metadata keys automatically. The scripts are a modified version of textacy code updated to run with the current spacy version. The script uses a spacy embeddings model to process a text document for a json metadata keyfile. The include positions are: "PROPN", "NOUN", "ADJ". The includes entities are: "PRODUCT", "EVENT", "FAC", "NORP", "PERSON", "ORG", "GPE", "LOC", "DATE", "TIME", "WORK_OF_ART". For details see <a href="https://spacy.io/usage/linguistic-features">Spacy linguistic features</a> and <a href="https://spacy.io/models/en">Model NER labels</a>. The instructions expect en model, but spacy supports a wide range of models.</p>
+<p>You can use textacy_parsing script for generating document metadata keys automatically. The scripts are a modified version of textacy code updated to run with the current spacy version. The script uses a spacy embeddings model to process a text document for a json metadata keyfile. The keys are parsed based on a config file in run_files/parse_configs/ner_types.json or run_files/parse_configs/ner_types_full.json. You can give your own config file if you want.</p>
+<p>The available configs are</p>
+<table>
+<thead>
+<tr>
+<th>Ngrams</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>PROPN</td>
+<td>Proper Noun</td>
+</tr>
+<tr>
+<td>NOUN</td>
+<td>Noun</td>
+</tr>
+<tr>
+<td>ADJ</td>
+<td>Adjective</td>
+</tr>
+<tr>
+<td>NNP</td>
+<td>Noun proper singular</td>
+</tr>
+<tr>
+<td>NN</td>
+<td>Noun, singular or mass</td>
+</tr>
+<tr>
+<td>AUX</td>
+<td>Auxiliary</td>
+</tr>
+<tr>
+<td>VBZ</td>
+<td>Verb, 3rd person singular present</td>
+</tr>
+<tr>
+<td>VERB</td>
+<td>Verb</td>
+</tr>
+<tr>
+<td>ADP</td>
+<td>Adposition</td>
+</tr>
+<tr>
+<td>SYM</td>
+<td>Symbol</td>
+</tr>
+<tr>
+<td>NUM</td>
+<td>Numeral</td>
+</tr>
+<tr>
+<td>CD</td>
+<td>Cardinal number</td>
+</tr>
+<tr>
+<td>VBG</td>
+<td>verb, gerund or present participle</td>
+</tr>
+<tr>
+<td>ROOT</td>
+<td>Root</td>
+</tr>
+</tbody>
+</table>
+<table>
+<thead>
+<tr>
+<th>Entities</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>FAC</td>
+<td>Buildings, airports, highways, bridges, etc.</td>
+</tr>
+<tr>
+<td>NORP</td>
+<td>Nationalities or religious or political groups</td>
+</tr>
+<tr>
+<td>GPE</td>
+<td>Countries, cities, states</td>
+</tr>
+<tr>
+<td>PRODUCT</td>
+<td>Objects, vehicles, foods, etc. (not services)</td>
+</tr>
+<tr>
+<td>EVENT</td>
+<td>Named hurricanes, battles, wars, sports events, etc.</td>
+</tr>
+<tr>
+<td>PERSON</td>
+<td>People, including fictional</td>
+</tr>
+<tr>
+<td>ORG</td>
+<td>Companies, agencies, institutions, etc.</td>
+</tr>
+<tr>
+<td>LOC</td>
+<td>Non-GPE locations, mountain ranges, bodies of water</td>
+</tr>
+<tr>
+<td>DATE</td>
+<td>Absolute or relative dates or periods</td>
+</tr>
+<tr>
+<td>TIME</td>
+<td>Times smaller than a day</td>
+</tr>
+<tr>
+<td>WORK_OF_ART</td>
+<td>Titles of books, songs, etc.</td>
+</tr>
+</tbody>
+</table>
+<table>
+<thead>
+<tr>
+<th>Extract type</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>orth</td>
+<td>Terms are represented by their text exactly as written</td>
+</tr>
+<tr>
+<td>lower</td>
+<td>Lowercased form of the text</td>
+</tr>
+<tr>
+<td>lemma</td>
+<td>Base form w/o inflectional suffixes</td>
+</tr>
+</tbody>
+</table>
+<p>For details see <a href="https://spacy.io/usage/linguistic-features">Spacy linguistic features</a> and <a href="https://spacy.io/models/en">Model NER labels</a>. The instructions expect en model, but spacy supports a wide range of models. You can also specify Noun chunks. Noun chunk of 2 for example would create keys like "Yellow House" or "Blond Hair".</p>
 <p>You can create ner metadata list with</p>
-<pre><code>python -m document_parsing.textacy_parsing
+<pre><code>python -m document_parsing.parse_ner
 </code></pre>
 <table>
 <thead>
@@ -121,7 +265,7 @@
 <tbody>
 <tr>
 <td>--data-directory</td>
-<td>The directory where your text files are stored. Default "./documents/skynet"</td>
+<td>The directory where your text files are stored. Default "./run_files/documents/skynet"</td>
 </tr>
 <tr>
 <td>--collection-name</td>
@@ -129,7 +273,7 @@
 </tr>
 <tr>
 <td>--key-storage</td>
-<td>The directory for the collection metadata keys. Default "./key_storage/"</td>
+<td>The directory for the collection metadata keys. Default "./run_files/key_storage/"</td>
 </tr>
 </tbody>
 </table>
