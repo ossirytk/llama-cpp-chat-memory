@@ -1,0 +1,10 @@
+{
+    "columns": [
+        "index",
+        "name",
+        "url",
+        "timestamp",
+        "character name",
+        "data"
+    ]
+}

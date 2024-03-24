@@ -1,0 +1,28 @@
+{
+    "filters": [
+        {
+            "remove_brackets": "(?:[A-Za-z]+ ){0,5}[A-Za-z]+\\[.*\\]|\\[.*\\]",
+            "replacement_whitespace": ""
+        },
+        {
+            "remove_consecutive_dashes": "[^a-zA-Z0-9 ]-.*",
+            "replacement_whitespace": ""
+        },
+        {
+            "remove_consecutive_equal_signs": "[^a-zA-Z0-9 ]=.*",
+            "replacement_whitespace": ""
+        },
+        {
+            "remove_bars": "\\|.*\\|",
+            "replacement_whitespace": ""
+        },
+        {
+            "remove_double_parenthesis": "\\(\\(.*\\)\\)",
+            "replacement_whitespace": ""
+        },
+        {
+            "remove_empty_linebreaks; ": "(?:\n){2,8}",
+            "replacement_linebreak": "\n"
+        }
+    ]
+}

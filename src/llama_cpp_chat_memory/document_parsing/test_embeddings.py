@@ -1,6 +1,7 @@
 import argparse
 import json
 import logging
+import re
 from os import getenv
 from os.path import exists, join
 
@@ -17,19 +18,17 @@ from langchain_community.vectorstores import Chroma
 load_dotenv(find_dotenv())
 
 
-# logging.basicConfig(format="%(message)s", encoding="utf-8", level=logging.DEBUG)
-logging.basicConfig(format="%(message)s", encoding="utf-8", level=logging.INFO)
+logging.basicConfig(format="%(message)s", encoding="utf-8", level=logging.DEBUG)
+# logging.basicConfig(format="%(message)s", encoding="utf-8", level=logging.INFO)
 
 
 def get_refined_query_data(query: str, prompt_template_dir: str) -> tuple[str, str]:
-    prompt_template_name = "question_refining_template2.json"
-    prompt_template_path = join(prompt_template_dir, prompt_template_name)
     prompt_metadata_template_name = "question_refining_metadata_template.json"
     metadata_prompt_template_path = join(prompt_template_dir, prompt_metadata_template_name)
 
-    prompt = load_prompt(prompt_template_path)
     # Supported model types are mistral and alpaca
     # Feel free to add things here
+
     if getenv("MODEL_TYPE") == "alpaca":
         llama_instruction = "### Instruction:"
         llama_input = "### Input:"
@@ -49,13 +48,6 @@ def get_refined_query_data(query: str, prompt_template_dir: str) -> tuple[str, s
         llama_instruction = ""
         llama_input = ""
         llama_response = ""
-
-    filled_prompt = prompt.partial(
-        llama_input=llama_input,
-        llama_instruction=llama_instruction,
-        llama_response=llama_response,
-        vector_context=" ",
-    )
 
     model_dir = getenv("MODEL_DIR")
     model = getenv("MODEL")
@@ -80,11 +72,6 @@ def get_refined_query_data(query: str, prompt_template_dir: str) -> tuple[str, s
         **params,
     )
 
-    llm_chain = LLMChain(prompt=filled_prompt, llm=llm_model)
-
-    result = llm_chain.invoke(query)
-    logging.info(f"Answer: {result['text']}")
-
     metadata_prompt = load_prompt(metadata_prompt_template_path)
     filled_metadata_prompt = metadata_prompt.partial(
         llama_input=llama_input,
@@ -94,15 +81,13 @@ def get_refined_query_data(query: str, prompt_template_dir: str) -> tuple[str, s
         vector_context=" ",
     )
 
-    llm_chain.prompt = filled_metadata_prompt
-    metadata_result = llm_chain.invoke(result["text"])
-    logging.info(f"Answer: {metadata_result['text']}")
-
-    return (result["text"], metadata_result["text"])
+    llm_chain = LLMChain(prompt=filled_metadata_prompt, llm=llm_model)
+    metadata_result = llm_chain.invoke(query)
+    return metadata_result["text"]
 
 
 def test_embeddings(
-    refined_query: str,
+    query: str,
     query_metadata: str,
     k: int,
     collection_name: str,
@@ -155,6 +140,9 @@ def test_embeddings(
             with open(key_storage_path, encoding="utf-8") as key_file:
                 content = key_file.read()
             all_keys = json.loads(content)
+            if "Content" in all_keys:
+                all_keys = all_keys["Content"]
+
         else:
             logging.info("Could not load filter list")
     logging.info(f"Loading filter list from: {key_storage_path}")
@@ -164,6 +152,9 @@ def test_embeddings(
     # There is also an issue with the filter only having one item so we use filter_list in this case
     metadata_filter_list = []
     filter_list = {}
+    logging.debug(f"Keywords before: {query_metadata}")
+    query_metadata = re.sub("Keywords?:?|keywords?:?|\\[.*\\]", "", query_metadata)
+    logging.debug(f"Keywords after: {query_metadata}")
     if all_keys:
         for item in all_keys.items():
             if item[1].lower() in query_metadata.lower():
@@ -172,6 +163,7 @@ def test_embeddings(
     else:
         logging.info("No keys")
 
+    logging.info(f"DEBUG: {filter_list}")
     if len(filter_list) == 1:
         where = filter_list
     elif len(filter_list) > 1:
@@ -183,7 +175,7 @@ def test_embeddings(
         logging.info("Similiarity search with score")
         logging.info(f"There are {db._collection.count()} documents in the collection")
         logging.debug(f"filter is: {where}")
-        docs = db.similarity_search_with_score(query=refined_query, k=k, filter=where)
+        docs = db.similarity_search_with_score(query=query, k=k, filter=where)
         vector_context = ""
         for answer in docs:
             logging.debug("--------------------------------------------------------------------")
@@ -197,7 +189,7 @@ def test_embeddings(
         logging.info("Max marginal relevance search")
         logging.info(f"There are {db._collection.count()} documents in the collection")
         logging.debug(f"filter is: {where}")
-        docs = db.max_marginal_relevance_search(query=refined_query, k=k, fetch_k=10, lambda_mult=0.75, filter=where)
+        docs = db.max_marginal_relevance_search(query=query, k=k, fetch_k=10, lambda_mult=0.75, filter=where)
 
         vector_context = ""
         for answer in docs:
@@ -220,8 +212,8 @@ def main(
     prompt_template_dir = getenv("PROMPT_TEMPLATE_DIRECTORY")
     refined_query_data = get_refined_query_data(query, prompt_template_dir)
     test_embeddings(
-        refined_query_data[0],
-        refined_query_data[1],
+        query,
+        refined_query_data,
         k,
         collection_name,
         persist_directory,
@@ -256,7 +248,7 @@ if __name__ == "__main__":
     parser.add_argument(
         "--persist-directory",
         type=str,
-        default="./character_storage/",
+        default="./run_files/character_storage/",
         help="The directory where you want to store the Chroma collection",
     )
     parser.add_argument(

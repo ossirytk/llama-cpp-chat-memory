@@ -1,3 +1,4 @@
+import re
 import sys
 
 import chainlit as cl
@@ -14,7 +15,6 @@ from llama_cpp_chat_memory import (  # noqa: E402
     CHAT_LOG,
     LLM_MODEL,
     PROMPT,
-    QUESTION_REFINING_PROMPT,
     QUSTION_REFINING_METADATA_PROMPT,
     RETRIEVER,
     USE_AVATAR_IMAGE,
@@ -52,20 +52,20 @@ def get_answer(message, llm_chain: ConversationChain, callback):
     vector_context = ""
     if RETRIEVER:
 
-        llm_chain_refine = LLMChain(prompt=QUESTION_REFINING_PROMPT, llm=LLM_MODEL)
-        refined_query_result = llm_chain_refine.invoke(message)
-        refined_query = refined_query_result["text"]
-        llm_chain_refine.prompt = QUSTION_REFINING_METADATA_PROMPT
-        metadata_result = llm_chain_refine.invoke(refined_query)
+        # TODO rework this. The question refining prompt can have poor accuracy
+        # Use ner?
+        llm_chain_refine = LLMChain(prompt=QUSTION_REFINING_METADATA_PROMPT, llm=LLM_MODEL)
+        metadata_result = llm_chain_refine.invoke(message)
         metadata_query = metadata_result["text"]
 
-        CHAT_LOG.info(f"Refined Query {refined_query}")
+        CHAT_LOG.info(f"Query {message}")
         CHAT_LOG.info(f"Query metadata {metadata_query}")
         # Currently Chroma has no "like" implementation so this is a case sensitive hack with uuids
         # There is also an issue when filter has only one item since "in" expects multiple items
         # With one item, just use a dict with "uuid", "filter"
         metadata_filter_list = []
         filter_list = {}
+        metadata_query = re.sub("Keywords?:?|keywords?:?|\\[.*\\]", "", metadata_query)
         if ALL_KEYS is not None:
             for item in ALL_KEYS.items():
                 if item[1].lower() in metadata_query.lower():
@@ -84,12 +84,12 @@ def get_answer(message, llm_chain: ConversationChain, callback):
         CHAT_LOG.info(f"There are {RETRIEVER._collection.count()} documents in the collection")
         CHAT_LOG.info(f"Filter {where}")
         if query_type == "similarity":
-            docs = RETRIEVER.similarity_search_with_score(query=refined_query, k=k, filter=where)
+            docs = RETRIEVER.similarity_search_with_score(query=message, k=k, filter=where)
             for answer in docs:
                 vector_context = vector_context + answer[0].page_content
         elif query_type == "mmr":
             docs = RETRIEVER.max_marginal_relevance_search(
-                query=refined_query,
+                query=message,
                 k=k,
                 fetch_k=int(getenv("FETCH_K")),
                 lambda_mult=float64(getenv("LAMBDA_MULT")),

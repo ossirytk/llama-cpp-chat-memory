@@ -11,7 +11,7 @@ python -m spacy download en_core_web_lg
 playwright install
 ```
 
-You will need playwright for webscraping and the spacy models for text embeddings if you do not use llama-cpp embeddings. These are not needed for running the chatbot itself.</BR>
+You will need spacy models for text embeddings if you do not use llama-cpp embeddings. Playwright is used by the old webscrape scripts. These are not needed for running the chatbot itself.</BR>
 
 You also might want to run llama-cpp with gpu acceleration like cuda. See [llama-cpp-python](https://github.com/abetlen/llama-cpp-python) for specifics. Then run:
 ```

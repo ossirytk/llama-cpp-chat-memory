@@ -2,73 +2,22 @@ import argparse
 import json
 import logging
 import os
-from collections.abc import Sequence
+import re
 from os.path import exists, join
 
-from bs4 import BeautifulSoup
 from dotenv import find_dotenv, load_dotenv
-from langchain.document_loaders import AsyncChromiumLoader
-from langchain.schema import Document
+from trafilatura import extract, fetch_url
 
 logging.basicConfig(format="%(message)s", encoding="utf-8", level=logging.DEBUG)
 load_dotenv(find_dotenv())
-
-
-def remove_unwanted_tags_and_lines(html_content: str, unwanted_tags: list[str]) -> str:
-    soup = BeautifulSoup(html_content, "html.parser")
-    for tag in unwanted_tags:
-        for element in soup.find_all(tag):
-            element.decompose()
-    return soup
-
-
-def extract_tags(html_content: BeautifulSoup, tags: list[str], unwanted_lines: list[str]) -> str:
-    text_parts: list[str] = []
-    for element in html_content.find_all():
-        wanted = True
-        # TODO this should probably be optimized
-        for line in unwanted_lines:
-            ## .count('\n') to remove strings of extra lines
-            ## Remove preceding or trailing \n
-            if line in element.text:
-                wanted = False
-            if element.text.count("\n") > 1 and len(element.text) < 10:
-                wanted = False
-
-        if element.name in tags and wanted:
-            text_parts.append(element.text)
-
-    return text_parts
-
-
-def clean_html(
-    documents: Sequence[Document],
-    tags_to_extract,
-    unwanted_tags,
-    unwanted_lines,
-) -> Sequence[Document]:
-    if tags_to_extract is None:
-        tags_to_extract = ["p", "li", "div", "a"]
-    if unwanted_tags is None:
-        unwanted_tags = ["script", "style", "footer"]
-
-    if unwanted_lines is None:
-        unwanted_lines = ["fandom"]
-
-    cleaned_documents = []
-    logging.debug("Processing Corpus")
-    for document in documents:
-        cleaned_content = remove_unwanted_tags_and_lines(document.page_content, unwanted_tags)
-        cleaned_content = extract_tags(cleaned_content, tags_to_extract, unwanted_lines)
-        cleaned_documents.extend(cleaned_content)
-
-    return cleaned_documents
 
 
 def main(
     documents_directory: str,
     collection_name: str,
     web_scrape_directory: str,
+    filter_directory: str,
+    filter_file: str,
 ) -> None:
     web_scrape_path = join(".", web_scrape_directory, collection_name + ".json")
     if exists(web_scrape_path):
@@ -78,30 +27,39 @@ def main(
     else:
         logging.debug("Could not load filter list")
         return
-    logging.debug(f"Scraping pages: {scrape_configs['pages']}")
-    logging.debug(f"Extracting tags: {scrape_configs['tags_to_extract']}")
-    logging.debug(f"Unwanted tags: {scrape_configs['unwanted_tags']}")
-    logging.debug(f"Unwanted lines: {scrape_configs['unwanted_lines']}")
 
-    logging.info("Loading html")
-    loader = AsyncChromiumLoader(scrape_configs["pages"])
-    html = loader.load()
+    filters_path = join(".", filter_directory, filter_file)
+    if exists(filters_path):
+        with open(filters_path) as key_file:
+            filter_content = key_file.read()
+        filter_configs = json.loads(filter_content)
+    else:
+        logging.debug("Could not load filter list")
+        return
 
-    logging.info("Transforming documents")
-    docs_transformed = clean_html(
-        html,
-        scrape_configs["tags_to_extract"],
-        scrape_configs["unwanted_tags"],
-        scrape_configs["unwanted_lines"],
-    )
+    parse_filters = filter_configs["filters"]
 
-    logging.info("Saving Corpus")
+    # TODO more filtering with pandas
     storage_path = os.path.join(documents_directory, collection_name + ".txt")
+    for page in scrape_configs["pages"]:
+        logging.info("Loading html")
+        downloaded = fetch_url(page)
 
-    logging.info(f"Created {len(docs_transformed) } documents")
-    with open(storage_path, "w", encoding="utf-8") as file:
-        for doc in docs_transformed:
-            file.write(doc + "\n")
+        if downloaded is not None:
+            logging.info("Transforming documents")
+            result = extract(
+                downloaded, include_comments=False, include_images=False, include_links=False, include_tables=False
+            )
+
+            for parse_filter in parse_filters:
+                filter_iterator = iter(parse_filter)
+                parse_regex = next(filter_iterator)
+                parse_replacment = next(filter_iterator)
+                result = re.sub(parse_filter[parse_regex], parse_filter[parse_replacment], result)
+
+            logging.info("Saving Corpus")
+            with open(storage_path, "a", encoding="utf-8") as file:
+                file.write(result + "\n")
 
 
 if __name__ == "__main__":
@@ -112,7 +70,7 @@ if __name__ == "__main__":
     parser.add_argument(
         "--data-directory",
         type=str,
-        default="./documents/skynet",
+        default="./run_files/documents/skynet",
         help="The directory where your text files are stored",
     )
 
@@ -126,8 +84,22 @@ if __name__ == "__main__":
     parser.add_argument(
         "--web-scrape-directory",
         type=str,
-        default="./web_scrape_configs/",
+        default="./run_files/web_scrape_configs/",
         help="The config file to be used for the webscrape",
+    )
+
+    parser.add_argument(
+        "--filter-directory",
+        type=str,
+        default="./run_files/filters/",
+        help="The filter directory",
+    )
+
+    parser.add_argument(
+        "--filter-file",
+        type=str,
+        default="web_scrape_filter.json",
+        help="The web scrape filter",
     )
 
     # Parse arguments
@@ -137,4 +109,6 @@ if __name__ == "__main__":
         documents_directory=args.data_directory,
         collection_name=args.collection_name,
         web_scrape_directory=args.web_scrape_directory,
+        filter_directory=args.filter_directory,
+        filter_file=args.filter_file,
     )

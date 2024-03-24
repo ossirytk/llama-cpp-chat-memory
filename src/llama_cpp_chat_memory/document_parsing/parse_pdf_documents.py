@@ -99,7 +99,7 @@ if __name__ == "__main__":
     parser.add_argument(
         "--data-directory",
         type=str,
-        default="./documents/fyodor_dostoyevsky",
+        default="./run_files/documents/fyodor_dostoyevsky",
         help="The directory where your text files are stored",
     )
     parser.add_argument(
@@ -111,7 +111,7 @@ if __name__ == "__main__":
     parser.add_argument(
         "--persist-directory",
         type=str,
-        default="./character_storage/",
+        default="./run_files/character_storage/",
         help="The directory where you want to store the Chroma collection",
     )
 

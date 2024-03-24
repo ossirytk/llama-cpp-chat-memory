@@ -1,4 +1,4 @@
-### Configs
+### Basic Configs
 You can change the configuration settings in .env file.
 
 The available embeddings are llama,spacy and hugginface. Make sure that the config for the chat matches the embeddings that were used to create the chroma collection. 
@@ -31,3 +31,13 @@ ROPE_CONTEXT | Rope context for rope scaling
 N_CTX | Context size
 USE_MAX_TOKENS | Use max tokens. True/False
 MAX_TOKENS | Max tokens
+
+### General Configs
+Other configs are found in the run_files folder. These include Webscrape configs, ner parse configs and filter configs. 
+
+Filters folder defines the general webscrape filters to clean the documents. This file uses regex and can easily be modified to add extra filtering.
+
+Parse_configs defines the expected csv column structure and ner type parsing. This includes noun engrams, entities, noun chunks and parse type.
+
+Web scrape configs define the web pages fo a scrape. This is convinient if you want to scrape multiple pages.
+

@@ -1,0 +1,12 @@
+{
+    "ngs": [
+        "NOUN",
+        "VERB",
+        "ADJ"
+    ],
+    "entities": [
+        "PERSON"
+    ],
+    "noun_chunks": 1,
+    "extract_type": "orth"
+}
