@@ -39,7 +39,6 @@ def main(
 
     parse_filters = filter_configs["filters"]
 
-    # TODO more filtering with pandas
     storage_path = os.path.join(documents_directory, collection_name + ".txt")
     for page in scrape_configs["pages"]:
         logging.info("Loading html")
