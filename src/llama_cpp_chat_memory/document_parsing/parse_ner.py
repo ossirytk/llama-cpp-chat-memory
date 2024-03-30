@@ -98,7 +98,7 @@ def _split_text(text: str, separators: list[str], chunk_size: int, chunk_overlap
             if not new_separators:
                 final_chunks.append(s)
             else:
-                other_info = _split_text(s, new_separators)
+                other_info = _split_text(s, new_separators, chunk_size, chunk_overlap)
                 final_chunks.extend(other_info)
     if _good_splits:
         merged_text = merge_splits(_good_splits, _separator, chunk_size, chunk_overlap)
@@ -311,14 +311,14 @@ if __name__ == "__main__":
     parser.add_argument(
         "--chunk-size",
         type=int,
-        default=4096,
+        default=524288,
         help="The text chunk size for parsing.",
     )
 
     parser.add_argument(
         "--chunk-overlap",
         type=int,
-        default=1024,
+        default=0,
         help="The overlap for text chunks for parsing",
     )
 

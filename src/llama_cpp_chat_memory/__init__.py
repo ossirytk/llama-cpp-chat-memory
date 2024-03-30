@@ -6,6 +6,7 @@ from os import getenv, makedirs, mkdir
 from os.path import dirname, exists, join, realpath, splitext
 
 import chromadb
+import pandas as pd
 import toml
 import yaml
 from chromadb.config import Settings
@@ -58,9 +59,11 @@ def parse_keys():
             CHAT_LOG.debug(f"Filter keys: {all_keys}")
 
     if all_keys is not None and "Content" in all_keys:
-        return all_keys["Content"]
+        return pd.DataFrame.from_dict(all_keys["Content"], orient="index", columns=["keys"])
+    elif all_keys is not None and "Content" not in all_keys:
+        return pd.DataFrame.from_dict(all_keys, orient="index", columns=["keys"])
     else:
-        return all_keys
+        return None
 
 
 def parse_question_refining_metadata_prompt():

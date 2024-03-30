@@ -4,7 +4,9 @@ import sys
 import chainlit as cl
 from langchain.chains import ConversationChain, LLMChain
 from langchain.chains.conversation.memory import ConversationBufferWindowMemory
-from numpy import float64
+from nltk import regexp_tokenize
+
+# from numpy import float64
 
 sys.path.append(".")
 sys.path.append("..")
@@ -63,43 +65,50 @@ def get_answer(message, llm_chain: ConversationChain, callback):
         # Currently Chroma has no "like" implementation so this is a case sensitive hack with uuids
         # There is also an issue when filter has only one item since "in" expects multiple items
         # With one item, just use a dict with "uuid", "filter"
-        metadata_filter_list = []
-        filter_list = {}
+        filter_dict = {}
         metadata_query = re.sub("Keywords?:?|keywords?:?|\\[.*\\]", "", metadata_query)
-        if ALL_KEYS is not None:
-            for item in ALL_KEYS.items():
-                if item[1].lower() in metadata_query.lower():
-                    filter_list[item[0]] = item[1]
-                    metadata_filter_list.append({item[0]: {"$in": [item[1]]}})
+        if ALL_KEYS is not None and not ALL_KEYS.empty:
+            tokens = regexp_tokenize(metadata_query.lower(), r"\w+", gaps=False)
+            keys_df = ALL_KEYS[ALL_KEYS["keys"].isin(tokens)]
+            keys_dict = keys_df.to_dict()
+            filter_dict = keys_dict["keys"]
 
-        if len(filter_list) == 1:
-            where = filter_list
-        elif len(filter_list) > 1:
+        if len(filter_dict) == 1:
+            metadata_filter = {}
+            for item in filter_dict.items():
+                metadata_filter[item[0]] = item[1]
+            where = filter_dict
+        elif len(filter_dict) > 1:
+            metadata_filter_list = []
+            for item in filter_dict.items():
+                metadata_filter_list.append({item[0]: {"$in": [item[1]]}})
             where = {"$or": metadata_filter_list}
         else:
             where = None
 
-        query_type = getenv("QUERY_TYPE")
+        # query_type = getenv("QUERY_TYPE")
         k = int(getenv("VECTOR_K"))
         CHAT_LOG.info(f"There are {RETRIEVER._collection.count()} documents in the collection")
         CHAT_LOG.info(f"Filter {where}")
-        if query_type == "similarity":
-            docs = RETRIEVER.similarity_search_with_score(query=message, k=k, filter=where)
-            for answer in docs:
-                vector_context = vector_context + answer[0].page_content
-        elif query_type == "mmr":
-            docs = RETRIEVER.max_marginal_relevance_search(
-                query=message,
-                k=k,
-                fetch_k=int(getenv("FETCH_K")),
-                lambda_mult=float64(getenv("LAMBDA_MULT")),
-                filter=where,
-            )
-            for answer in docs:
-                vector_context = vector_context + answer.page_content
-        else:
-            CHAT_LOG.error(f"{query_type} is not implemented")
-            raise NotImplementedError()
+
+        # TODO mmr does not work currently
+        # if query_type == "similarity":
+        docs = RETRIEVER.similarity_search_with_score(query=message, k=k, filter=where)
+        for answer in docs:
+            vector_context = vector_context + answer[0].page_content
+        # elif query_type == "mmr":
+        #    docs = RETRIEVER.max_marginal_relevance_search(
+        #        query=message,
+        #        k=k,
+        #        fetch_k=int(getenv("FETCH_K")),
+        #        lambda_mult=float64(getenv("LAMBDA_MULT")),
+        #        filter=where,
+        #    )
+        #    for answer in docs:
+        #        vector_context = vector_context + answer.page_content
+        # else:
+        #    CHAT_LOG.error(f"{query_type} is not implemented")
+        #    raise NotImplementedError()
 
         CHAT_LOG.info(vector_context)
     llm_chain.prompt = llm_chain.prompt.partial(vector_context=vector_context)

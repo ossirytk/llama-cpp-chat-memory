@@ -6,6 +6,7 @@ from os import getenv
 from os.path import exists, join
 
 import chromadb
+import pandas as pd
 from chromadb.config import Settings
 from custom_llm_classes.custom_spacy_embeddings import CustomSpacyEmbeddings
 from dotenv import find_dotenv, load_dotenv
@@ -14,6 +15,7 @@ from langchain.prompts import load_prompt
 from langchain_community.embeddings import HuggingFaceEmbeddings, LlamaCppEmbeddings
 from langchain_community.llms import LlamaCpp
 from langchain_community.vectorstores import Chroma
+from nltk import regexp_tokenize
 
 load_dotenv(find_dotenv())
 
@@ -93,7 +95,7 @@ def test_embeddings(
     collection_name: str,
     persist_directory: str,
     embeddings_type: str,
-    search_type,
+    _search_type,
 ) -> None:
     model_dir = getenv("MODEL_DIR")
     model = getenv("MODEL")
@@ -132,7 +134,7 @@ def test_embeddings(
     )
 
     use_keys = getenv("USE_KEY_STORAGE")
-    all_keys = None
+    df = None
     if use_keys:
         key_storage = getenv("KEY_STORAGE_DIRECTORY")
         key_storage_path = join(".", key_storage, collection_name + ".json")
@@ -143,62 +145,70 @@ def test_embeddings(
             if "Content" in all_keys:
                 all_keys = all_keys["Content"]
 
+            df = pd.DataFrame.from_dict(all_keys, orient="index", columns=["keys"])
         else:
             logging.info("Could not load filter list")
     logging.info(f"Loading filter list from: {key_storage_path}")
-    # logging.debug(f"Filter keys: {all_keys}")
+    logging.debug(f"Filter: {df.head()}")
 
     # Currently Chroma has no "like" implementation so this is a case sensitive hack
     # There is also an issue with the filter only having one item so we use filter_list in this case
-    metadata_filter_list = []
-    filter_list = {}
     logging.debug(f"Keywords before: {query_metadata}")
     query_metadata = re.sub("Keywords?:?|keywords?:?|\\[.*\\]", "", query_metadata)
     logging.debug(f"Keywords after: {query_metadata}")
-    if all_keys:
-        for item in all_keys.items():
-            if item[1].lower() in query_metadata.lower():
-                filter_list[item[0]] = item[1]
-                metadata_filter_list.append({item[0]: {"$in": [item[1]]}})
+    filter_dict = {}
+    if not df.empty:
+        tokens = regexp_tokenize(query_metadata.lower(), r"\w+", gaps=False)
+        keys_df = df[df["keys"].isin(tokens)]
+        keys_dict = keys_df.to_dict()
+        filter_dict = keys_dict["keys"]
     else:
         logging.info("No keys")
 
-    logging.info(f"DEBUG: {filter_list}")
-    if len(filter_list) == 1:
-        where = filter_list
-    elif len(filter_list) > 1:
+    if len(filter_dict) == 1:
+        metadata_filter = {}
+        for item in filter_dict.items():
+            metadata_filter[item[0]] = item[1]
+        where = filter_dict
+    elif len(filter_dict) > 1:
+        metadata_filter_list = []
+        for item in filter_dict.items():
+            metadata_filter_list.append({item[0]: {"$in": [item[1]]}})
         where = {"$or": metadata_filter_list}
     else:
         where = None
     # query it
-    if search_type == "similiarity":
-        logging.info("Similiarity search with score")
-        logging.info(f"There are {db._collection.count()} documents in the collection")
-        logging.debug(f"filter is: {where}")
-        docs = db.similarity_search_with_score(query=query, k=k, filter=where)
-        vector_context = ""
-        for answer in docs:
-            logging.debug("--------------------------------------------------------------------")
-            logging.debug(f"distance: {answer[1]}")
-            logging.debug(answer[0].metadata)
-            logging.debug(answer[0].page_content)
-            vector_context = vector_context + answer[0].page_content
-        logging.info("--------------------------------------------------------------------")
-        logging.info(vector_context)
-    elif search_type == "mmr":
-        logging.info("Max marginal relevance search")
-        logging.info(f"There are {db._collection.count()} documents in the collection")
-        logging.debug(f"filter is: {where}")
-        docs = db.max_marginal_relevance_search(query=query, k=k, fetch_k=10, lambda_mult=0.75, filter=where)
-
-        vector_context = ""
-        for answer in docs:
-            logging.debug("--------------------------------------------------------------------")
-            logging.debug(answer.page_content)
-            vector_context = vector_context + answer.page_content
-        logging.info("--------------------------------------------------------------------")
-        vector_context = vector_context.replace("\n\n", "\n")
-        logging.info(vector_context)
+    # if search_type == "similiarity":
+    logging.info("Similiarity search with score")
+    logging.info(f"There are {db._collection.count()} documents in the collection")
+    logging.debug(f"filter is: {where}")
+    docs = db.similarity_search_with_score(query=query, k=k, filter=where)
+    vector_context = ""
+    for answer in docs:
+        logging.debug("--------------------------------------------------------------------")
+        logging.debug(f"distance: {answer[1]}")
+        # logging.debug(answer[0].metadata)
+        logging.debug(answer[0].page_content)
+        vector_context = vector_context + answer[0].page_content
+    logging.info("--------------------------------------------------------------------")
+    logging.info(vector_context)
+    # TODO mmr currenly does not work
+    # Has something to do with chroma integration?
+    # elif search_type == "mmr":
+    #    logging.info("Max marginal relevance search")
+    #    logging.info(f"There are {db._collection.count()} documents in the collection")
+    #    logging.debug(f"filter is: {where}")
+    #    logging.debug(f"DEBUG: {query}")
+    #    docs = db.max_marginal_relevance_search(query=query, k=k, fetch_k=10, lambda_mult=0.75, filter=where)
+    #
+    #    vector_context = ""
+    #    for answer in docs:
+    #        logging.debug("--------------------------------------------------------------------")
+    #        logging.debug(answer.page_content)
+    #        vector_context = vector_context + answer.page_content
+    #    logging.info("--------------------------------------------------------------------")
+    #    vector_context = vector_context.replace("\n\n", "\n")
+    #    logging.info(vector_context)
 
 
 def main(
