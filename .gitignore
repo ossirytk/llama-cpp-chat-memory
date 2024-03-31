@@ -1,6 +1,6 @@
 .vscode
 .env
-.env_test
+.env_test*
 dist/
 site/
 __pycache__/

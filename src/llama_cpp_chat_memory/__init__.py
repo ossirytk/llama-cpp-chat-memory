@@ -143,7 +143,7 @@ def parse_prompt():
                 if is_v2 and "data" in card:
                     card = card["data"]
             char_name = card["name"] if "name" in card else card["char_name"]
-            temp_folder_path = join(script_root_path, "temp")
+            temp_folder_path = join(script_root_path, "run_files", "temp")
             copy_image_filename = join(temp_folder_path, char_name + ".png")
             if not exists(copy_image_filename):
                 if not exists(temp_folder_path):
@@ -312,21 +312,24 @@ def instantiate_llm():
     # MAX_TOKENS is an optional param for when model answer cuts off
     # This can happen when large context models are told to print multiple paragraphs
     # Setting MAX_TOKENS lower than the context size can sometimes fix this
+
     params = {
+        "seed": getenv("SEED"),
         "n_ctx": getenv("N_CTX"),
-        "temperature": 0.6,
-        "last_n_tokens_size": 256,
-        "n_batch": 1024,
-        "repeat_penalty": 1.17647,
+        "last_n_tokens_size": getenv("LAST_N_TOKENS_SIZE"),
+        "n_batch": getenv("N_BATCH"),
+        "max_tokens": getenv("MAX_TOKENS"),
+        "n_parts": getenv("N_PARTS"),
+        "use_mlock": getenv("USE_MLOCK"),
+        "use_mmap": getenv("USE_MMAP"),
+        "top_p": getenv("TOP_P"),
+        "top_k": getenv("TOP_K"),
+        "temperature": getenv("TEMPERATURE"),
+        "repeat_penalty": getenv("REPEAT_PENALTY"),
         "n_gpu_layers": getenv("LAYERS"),
         "rope_freq_scale": getenv("ROPE_CONTEXT"),
+        "verbose": getenv("VERBOSE"),
     }
-
-    if getenv("USE_MAX_TOKENS"):
-        CHAT_LOG.debug("Using max tokens")
-        params["max_tokens"] = getenv("MAX_TOKENS")
-    else:
-        CHAT_LOG.debug("Not using max tokens")
 
     llm_model_init = LlamaCpp(
         model_path=model_source,
