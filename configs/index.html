@@ -65,7 +65,7 @@
                   <li class="toctree-l1"><a class="reference internal" href="../running_the_chatbot/">Running the chatbot</a>
                   </li>
               </ul>
-              <p class="caption"><span class="caption-text">Working with documents and the vectorstore</span></p>
+              <p class="caption"><span class="caption-text">Working with documents</span></p>
               <ul>
                   <li class="toctree-l1"><a class="reference internal" href="../webscraping/">Webscraping</a>
                   </li>
@@ -131,10 +131,6 @@
 <td>alpaca/mistral</td>
 </tr>
 <tr>
-<td>LAYERS</td>
-<td>Number of layers to offload to gpu</td>
-</tr>
-<tr>
 <td>CHARACTER_CARD_DIR</td>
 <td>The directory for chracter cards</td>
 </tr>
@@ -183,6 +179,14 @@
 <td>spacy/hugginface model name (needs to be installed)</td>
 </tr>
 <tr>
+<td>VECTOR_K</td>
+<td>Fetch k closest embeddings for mmr</td>
+</tr>
+<tr>
+<td>BUFFER_K</td>
+<td>Buffer last k exchanges to conversation context</td>
+</tr>
+<tr>
 <td>FETCH_K</td>
 <td>Fetch k closest embeddings for similiarity</td>
 </tr>
@@ -191,12 +195,48 @@
 <td>Lambda for Chroma</td>
 </tr>
 <tr>
-<td>VECTOR_K</td>
-<td>Fetch k closest embeddings for mmr</td>
+<td>LAYERS</td>
+<td>Number of layers to offload to gpu</td>
 </tr>
 <tr>
-<td>BUFFER_K</td>
-<td>Buffer last k exchanges to conversation context</td>
+<td>SEED</td>
+<td>Seed used for generation. Default random (-1)</td>
+</tr>
+<tr>
+<td>N_PARTS</td>
+<td>How many parts the model is divided into. Default auto (-1)</td>
+</tr>
+<tr>
+<td>USE_MLOCK</td>
+<td>Load the whole model into ram. Default False</td>
+</tr>
+<tr>
+<td>USE_MMAP</td>
+<td>Allows only the necessary parts to be loaded into memory and offloading the rest. Default true</td>
+</tr>
+<tr>
+<td>TEMPERATURE</td>
+<td>Adjust the randomness of the generated text (default: 0.8)</td>
+</tr>
+<tr>
+<td>TOP_P</td>
+<td>A higher value for top-p (e.g., 0.95) will lead to more diverse text, while a lower value (e.g., 0.5) will generate more focused and conservative text. The default value is 0.9.</td>
+</tr>
+<tr>
+<td>TOP_K</td>
+<td>A higher value for top-k (e.g., 100) will consider more tokens and lead to more diverse text, while a lower value (e.g., 10) will focus on the most probable tokens and generate more conservative text. The default value is 40.</td>
+</tr>
+<tr>
+<td>REPEAT_PENALTY</td>
+<td>The repeat-penalty option helps prevent the model from generating repetitive or monotonous text. A higher value (e.g., 1.5) will penalize repetitions more strongly, while a lower value (e.g., 0.9) will be more lenient. The default value is 1.1.</td>
+</tr>
+<tr>
+<td>LAST_N_TOKENS_SIZE</td>
+<td>Last n tokens to consider for penalizing repetition</td>
+</tr>
+<tr>
+<td>VERBOSE</td>
+<td>Verbose mode. Default True</td>
 </tr>
 <tr>
 <td>ROPE_CONTEXT</td>
@@ -207,12 +247,8 @@
 <td>Context size</td>
 </tr>
 <tr>
-<td>USE_MAX_TOKENS</td>
-<td>Use max tokens. True/False</td>
-</tr>
-<tr>
 <td>MAX_TOKENS</td>
-<td>Max tokens</td>
+<td>Max tokens. Default 256</td>
 </tr>
 </tbody>
 </table>
