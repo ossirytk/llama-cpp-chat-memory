@@ -1,6 +1,8 @@
 ### Named Entity Recognition(NER)
 You can use textacy_parsing script for generating document metadata keys automatically. The scripts are a modified version of textacy code updated to run with the current spacy version. The script uses a spacy embeddings model to process a text document for a json metadata keyfile. The keys are parsed based on a config file in run_files/parse_configs/ner_types.json or run_files/parse_configs/ner_types_full.json. You can give your own config file if you want.
 
+**The new parse script uses multiprocess to improve performance. The default process pool number is 6. You should change the process number based on the number of cores your machine has.**
+
 The available configs are
 
 Ngrams        | Description
@@ -54,3 +56,4 @@ Optional param         | Description
 --data-directory       | The directory where your text files are stored. Default "./run_files/documents/skynet"
 --collection-name      | The name of the collection Will be used as name and location for the keyfile. Default "skynet"
 --key-storage          | The directory for the collection metadata keys. Default "./run_files/key_storage/"
+--threads              | The number of multiprocess threads. Default 6.
