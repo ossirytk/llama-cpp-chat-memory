@@ -2,13 +2,11 @@ import argparse
 import glob
 import json
 import logging
-import multiprocessing as mp
 import os
 import re
 import uuid
 from collections.abc import Iterable
 from functools import partial
-from multiprocessing import Manager, Pool
 from os.path import exists, join
 
 import pandas as pd
@@ -17,17 +15,7 @@ from document_parsing.spacier import core
 from dotenv import find_dotenv, load_dotenv
 from spacy.tokens import Doc
 
-# This is the config for multiprocess logger
-# Setting the level to debug outputs multiprocess debug lines too
-NER_LOGGER = mp.get_logger()
-FORMAT = "%(levelname)s:%(message)s"
-formatter = logging.Formatter(fmt=FORMAT)
-handler = logging.StreamHandler()
-handler.setFormatter(formatter)
-
-NER_LOGGER.addHandler(handler)
-NER_LOGGER.setLevel(logging.INFO)
-
+logging.basicConfig(format="%(message)s", encoding="utf-8", level=logging.DEBUG)
 load_dotenv(find_dotenv())
 
 SPACY_CHARACTER_LIMIT = 1000000
@@ -144,7 +132,7 @@ def merge_splits(splits: Iterable[str], separator: str, chunk_size, chunk_overla
         _len = len(d)
         if total + _len + (separator_len if len(current_doc) > 0 else 0) > chunk_size:
             if total > chunk_size:
-                NER_LOGGER.warning(f"Created a chunk of size {total}, which is longer than the specified {chunk_size}")
+                logging.warning(f"Created a chunk of size {total}, which is longer than the specified {chunk_size}")
             if len(current_doc) > 0:
                 doc = join_docs(current_doc, separator)
                 if doc is not None:
@@ -189,7 +177,7 @@ def process_documents(
             filter_content = key_file.read()
         filter_configs = json.loads(filter_content)
     else:
-        NER_LOGGER.info("Could not load parse config file")
+        logging.debug("Could not load parse config file")
         return
 
     ngrams_list = filter_configs["ngs"]
@@ -197,7 +185,7 @@ def process_documents(
     noun_chunks = filter_configs["noun_chunks"]
     extract_type = filter_configs["extract_type"]
 
-    NER_LOGGER.info("Extracting terms from corpus")
+    logging.debug("Extracting terms from corpus")
     extracted_terms = terms(
         documents,
         ngs=partial(ngrams, n=noun_chunks, include_pos=ngrams_list),
@@ -211,78 +199,13 @@ def process_documents(
     lemma_strings = list(terms_to_strings(extracted_terms, by=extract_type))
     all_keys = {}
 
-    NER_LOGGER.info(f"{len(lemma_strings)} metadata keys created")
+    logging.debug(f"{len(lemma_strings)} metadata keys created")
 
     # Create uuids for metadata filters
     for line in lemma_strings:
         filter_uuid = str(uuid.uuid1())
         all_keys[filter_uuid] = line
     return pd.Series(all_keys)
-
-
-def read_chuncks(text_corpus, chunk_size, chunk_overlap, que, reader_num) -> bool:
-    parts = split_text(text_corpus, chunk_size, chunk_overlap)
-    for doc in parts:
-        que.put(doc)
-    for _i in range(reader_num):
-        que.put("QUEUE_DONE")
-    NER_LOGGER.info("Reader done")
-    return True
-
-
-def process_chuncks(model, parse_config_directory, parse_config_file, read_que, write_que, name) -> bool:
-    while True:
-        try:
-            corpus = read_que.get(timeout=10)
-        except Exception as e:
-            NER_LOGGER.info(f"Processor {name} timed out: {e}")
-            write_que.put("QUEUE_DONE")
-            return False
-
-        if corpus == "QUEUE_DONE":
-            NER_LOGGER.info(f"Processor {name} done")
-            write_que.put("QUEUE_DONE")
-            break
-        doc = core.make_spacy_doc(corpus, lang=model)
-        pseries = process_documents(doc, parse_config_directory, parse_config_file)
-        write_que.put(pseries)
-    return True
-
-
-def write_chuncks(que, name) -> pd.DataFrame:
-    processor_iterators = 0
-    df = None
-    while True:
-        try:
-            corpus = que.get(timeout=10)
-        except Exception as e:
-            NER_LOGGER.info(f"Writer {name} timed out: {e}")
-            df["Content"].apply(lambda x: x.strip())
-            # TODO Place this filter in config file
-            # Removes one and two letter words
-            m = ~df.apply(lambda x: x.str.contains("\\b[a-zA-Z]{1,2}\\b")).any(axis=1)
-            df = df[m]
-            return df
-        if not isinstance(corpus, pd.Series) and corpus == "QUEUE_DONE":
-            processor_iterators += 1
-            NER_LOGGER.info(f"Writer {name} received done")
-            break
-        elif isinstance(corpus, pd.Series):
-            NER_LOGGER.info(f"Writer {name} received a chunck")
-            if df is None:
-                df = pd.DataFrame(corpus, columns=["Content"])
-            else:
-                df2 = pd.DataFrame(corpus, columns=["Content"])
-                df = pd.concat([df, df2])
-
-    df["Content"].apply(lambda x: x.strip())
-    # TODO Place this filter in config file
-    # Removes one and two letter words
-    m = ~df.apply(lambda x: x.str.contains("\\b[a-zA-Z]{1,2}\\b")).any(axis=1)
-    df = df[m]
-    NER_LOGGER.info(f"writer {name} - Total amount of keys created: {len(df.index)}")
-
-    return df
 
 
 def main(
@@ -294,92 +217,48 @@ def main(
     parse_config_file: str,
     chunk_size: int,
     chunk_overlap: int,
-    threads: int,
 ) -> None:
     documents_pattern = os.path.join(documents_directory, "*.txt")
     documents_paths_txt = glob.glob(documents_pattern)
     text_corpus = ""
 
     for txt_document in documents_paths_txt:
-        NER_LOGGER.info(f"Reading: {txt_document}")
+        logging.debug(f"Reading: {txt_document}")
         with open(txt_document, encoding="utf-8") as f:
             content = f.read()
             text_corpus = text_corpus + content
 
-    manager = Manager()
-    read_que = manager.Queue()
-    write_que = manager.Queue()
+    logging.debug("Cleaning Corpus")
 
-    pool = Pool(threads)
-
-    reader = pool.apply_async(
-        read_chuncks,
-        (
-            text_corpus,
-            chunk_size,
-            chunk_overlap,
-            read_que,
-            threads,
-        ),
-    )
-
-    read_success = reader.get()
-    if not read_success:
-        return
-
-    jobs = []
-    for i in range(threads):
-        job = pool.apply_async(
-            process_chuncks,
-            (
-                model,
-                parse_config_directory,
-                parse_config_file,
-                read_que,
-                write_que,
-                i,
-            ),
-        )
-        jobs.append(job)
-
-    for job in jobs:
-        job.get()
-
-    jobs = []
-    for i in range(threads):
-        job = pool.apply_async(
-            write_chuncks,
-            (
-                write_que,
-                i,
-            ),
-        )
-        jobs.append(job)
-
+    # the max corpus size is 1000000 characters so need to split the documents
+    parts = split_text(text_corpus, chunk_size, chunk_overlap)
     df = None
-    for job in jobs:
-        merge_result = job.get()
-        if merge_result is not None:
-            if df is None:
-                df = merge_result
-            else:
-                df = pd.concat([df, merge_result])
+    for corpus in parts:
+        doc = core.make_spacy_doc(corpus, lang=model)
+        pseries = process_documents(doc, parse_config_directory, parse_config_file)
+        if df is None:
+            df = pd.DataFrame(pseries, columns=["Content"])
+        else:
+            df2 = pd.DataFrame(pseries, columns=["Content"])
+            df = pd.concat([df, df2])
 
-    pool.close()
-    pool.join()
+    df = df.drop_duplicates()
+    logging.debug(f"Total amount of keys created: {len(df.index)}")
 
-    if df is not None:
-        df = df.drop_duplicates()
-        NER_LOGGER.info(f"Total amount of keys created: {len(df.index)}")
-        key_storage_path = os.path.join(key_storage, collection_name + ".json")
+    df["Content"].apply(lambda x: x.strip())
+    # TODO Place this filter in config file
+    # Removes one and two letter words
+    m = ~df.apply(lambda x: x.str.contains("\\b[a-zA-Z]{1,2}\\b")).any(axis=1)
+    df = df[m]
+    key_storage_path = os.path.join(key_storage, collection_name + ".json")
 
-        NER_LOGGER.debug("Create key file")
-        json_key_file = df.to_json()
-        with open(key_storage_path, mode="w", encoding="utf-8") as key_file:
-            key_file.write(json_key_file)
+    logging.debug("Create key file")
+    json_key_file = df.to_json()
+    with open(key_storage_path, mode="w", encoding="utf-8") as key_file:
+        key_file.write(json_key_file)
 
-        NER_LOGGER.info(f"Read files from directory: {documents_directory}")
-        NER_LOGGER.info(f"Wrote keys to: {key_storage_path}")
+    logging.info(f"Read files from directory: {documents_directory}")
+    logging.info(f"Wrote keys to: {key_storage_path}")
 
 
 if __name__ == "__main__":
@@ -432,8 +311,8 @@ if __name__ == "__main__":
     parser.add_argument(
         "--chunk-size",
         type=int,
-        default=1000000,
-        help="The text chunk size for parsing. Default spacy maximum chunk size",
+        default=524288,
+        help="The text chunk size for parsing.",
     )
 
     parser.add_argument(
@@ -441,13 +320,6 @@ if __name__ == "__main__":
         type=int,
         default=0,
         help="The overlap for text chunks for parsing",
-    )
-
-    parser.add_argument(
-        "--threads",
-        type=int,
-        default=6,
-        help="The number of threads to use.",
     )
 
     # Parse arguments
@@ -462,5 +334,4 @@ if __name__ == "__main__":
         parse_config_file=args.parse_config_file,
         chunk_size=args.chunk_size,
         chunk_overlap=args.chunk_overlap,
-        threads=args.threads,
     )
