@@ -221,6 +221,7 @@ def process_documents(
 
 
 def read_chuncks(text_corpus, chunk_size, chunk_overlap, que, reader_num) -> bool:
+    NER_LOGGER.info("Reading chuncks to que")
     parts = split_text(text_corpus, chunk_size, chunk_overlap)
     for doc in parts:
         que.put(doc)
@@ -231,6 +232,7 @@ def read_chuncks(text_corpus, chunk_size, chunk_overlap, que, reader_num) -> boo
 
 
 def process_chuncks(model, parse_config_directory, parse_config_file, read_que, write_que, name) -> bool:
+    NER_LOGGER.info(f"Processor {name} reading chuncks from que")
     while True:
         try:
             corpus = read_que.get(timeout=10)
@@ -249,8 +251,8 @@ def process_chuncks(model, parse_config_directory, parse_config_file, read_que, 
     return True
 
 
-def write_chuncks(que, name) -> pd.DataFrame:
-    processor_iterators = 0
+def clean_and_merge_chunks(que, name) -> pd.DataFrame:
+    NER_LOGGER.info(f"cleaner {name} reading chuncks from que")
     df = None
     while True:
         try:
@@ -264,7 +266,6 @@ def write_chuncks(que, name) -> pd.DataFrame:
             df = df[m]
             return df
         if not isinstance(corpus, pd.Series) and corpus == "QUEUE_DONE":
-            processor_iterators += 1
             NER_LOGGER.info(f"Writer {name} received done")
             break
         elif isinstance(corpus, pd.Series):
@@ -348,7 +349,7 @@ def main(
     jobs = []
     for i in range(threads):
         job = pool.apply_async(
-            write_chuncks,
+            clean_and_merge_chunks,
             (
                 write_que,
                 i,
