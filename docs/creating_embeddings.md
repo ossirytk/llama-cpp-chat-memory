@@ -27,7 +27,7 @@ Parse csv to text
 python -m document_parsing.parse_csv_to_text
 ```
 
-Parse the documents with 
+Parse the documents with. The new document parsing uses multiprocess to parse metadata keys created with parse_ner script. This increases the processing speed with large key files by a significant margin. The old script uses a single thread for processing keys and this can cause significant slowdown with many documents with large keyfiles. You can give the number of threads for the multiprocess with --threads
 ```
 python -m document_parsing.parse_text_documents
 python -m document_parsing.parse_text_documents
