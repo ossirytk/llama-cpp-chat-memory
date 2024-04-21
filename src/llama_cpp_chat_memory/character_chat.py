@@ -53,7 +53,6 @@ def get_answer(message, llm_chain: ConversationChain, callback):
     CHAT_LOG.info(message)
     vector_context = ""
     if RETRIEVER:
-
         # TODO rework this. The question refining prompt can have poor accuracy
         # Use ner?
         llm_chain_refine = LLMChain(prompt=QUSTION_REFINING_METADATA_PROMPT, llm=LLM_MODEL)
