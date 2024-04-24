@@ -21,7 +21,6 @@ def main(
     filter_config_directory: str,
     filter_config_file: str,
 ) -> None:
-
     documents_pattern = os.path.join(documents_directory, "*.csv")
     logging.debug(f"documents search pattern: {documents_pattern}")
     documents_paths_csv = glob.glob(documents_pattern)
@@ -55,8 +54,8 @@ def main(
             filter_iterator = iter(parse_filter)
             parse_regex = next(filter_iterator)
             parse_replacment = next(filter_iterator)
-            df["data"].replace(
-                to_replace=parse_filter[parse_regex], value=parse_filter[parse_replacment], regex=True, inplace=True
+            df["data"] = df["data"].replace(
+                to_replace=parse_filter[parse_regex], value=parse_filter[parse_replacment], regex=True
             )
         base = splitext(csv_document)[0]
         doc_path = base + ".txt"
