@@ -21,6 +21,7 @@ USE_KEY_STORAGE | Use NER keys for Chroma metadata
 COLLECTION | Chroma collection to use. "" to disable Chroma
 EMBEDDINGS_TYPE | llama/spacy/hugginface
 EMBEDDINGS_model | spacy/hugginface model name (needs to be installed)
+CUSTOM_CSS | Url to the custom css file to be used by the application.
 VECTOR_K | Fetch k closest embeddings for mmr
 BUFFER_K | Buffer last k exchanges to conversation context
 FETCH_K | Fetch k closest embeddings for similiarity

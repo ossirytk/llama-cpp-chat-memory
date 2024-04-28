@@ -17,6 +17,7 @@ def update_toml():
     prompt_dir = getenv("CHARACTER_CARD_DIR")
     prompt_name = getenv("CHARACTER_CARD")
     prompt_source = join(prompt_dir, prompt_name)
+    custom_css = getenv("CUSTOM_CSS")
 
     extension = splitext(prompt_source)[1]
     match extension:
@@ -51,6 +52,9 @@ def update_toml():
     with open(config_toml_path, encoding="utf-8") as toml_file:
         toml_dict = toml.load(toml_file)
         toml_dict["UI"]["name"] = char_name
+
+    if custom_css != "" or None:
+        toml_dict["UI"]["custom_css"] = custom_css
 
     with open(file=config_toml_path, mode="w", encoding="utf-8") as toml_file:
         toml.dump(toml_dict, toml_file)
