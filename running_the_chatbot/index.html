@@ -107,9 +107,14 @@
             <div class="section" itemprop="articleBody">
               
                 <h3 id="running-the-chatbot">Running the chatbot</h3>
-<p>To run the chatbot.</p>
+<p>To run the chatbot. You need to run the chat with the custom script instead of the chainlit run command.
+The reason for this is the updates for the config files when switching character. 
+These changes need to be done before calling chainlit.</p>
+<p>If you call chainlit directly, the character name and avatar picture won't update.</p>
+<p>Note: Currently something seems to be cached by chainlit. Until I find a way to clear the cache,
+you need to call run_chat twice for changes to take effect.</p>
 <pre><code>cd src\llama_cpp_langchain_chat
-chainlit run character_chat.py
+python -m run_chat
 </code></pre>
 <p>The chatbot should open in your browser<BR></p>
               
