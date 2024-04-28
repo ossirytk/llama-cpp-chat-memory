@@ -19,7 +19,6 @@ REPLACE_YOU | Replace references to "You" in card with "User"
 KEY_STORAGE_DIRECTORY | dir for NER keys for chroma
 USE_KEY_STORAGE | Use NER keys for Chroma metadata
 COLLECTION | Chroma collection to use. "" to disable Chroma
-QUERY_TYPE | Embeddings type. "mmr" or "similarity"
 EMBEDDINGS_TYPE | llama/spacy/hugginface
 EMBEDDINGS_model | spacy/hugginface model name (needs to be installed)
 VECTOR_K | Fetch k closest embeddings for mmr
