@@ -8,9 +8,18 @@ If you call chainlit directly, the character name and avatar picture won't updat
 Note: Currently something seems to be cached by chainlit. Until I find a way to clear the cache,
 you need to call run_chat twice for changes to take effect.
 
+Some browsers don't allow loading css file from local directories. For testing purposes there is a flask script to run a simple http server that serves stylesheets from the "static/" directory. You will need to run the flask server in another terminal instance.
+
 ```
 cd src\llama_cpp_langchain_chat
 python -m run_chat
 ```
 
 The chatbot should open in your browser<BR>
+
+Running flask
+```
+hatch shell chat
+cd .\src\llama_cpp_chat_memory\
+flask --app flask_web_server run
+```
