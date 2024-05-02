@@ -3,26 +3,25 @@ import fnmatch
 import json
 import logging
 import re
+from collections import deque
 from os import getenv, makedirs, mkdir
 from os.path import dirname, exists, join, realpath, splitext
 
+import chainlit as cl
 import chromadb
 import pandas as pd
 import yaml
 from chromadb.config import Settings
 from custom_llm_classes.custom_spacy_embeddings import CustomSpacyEmbeddings
 from dotenv import find_dotenv, load_dotenv
-from langchain.chains import ConversationChain, LLMChain
-from langchain.chains.conversation.memory import ConversationBufferWindowMemory
-from langchain.prompts import load_prompt
+from langchain.schema.runnable.config import RunnableConfig
 from langchain_community.embeddings import HuggingFaceEmbeddings, LlamaCppEmbeddings
-from langchain_community.llms import LlamaCpp
+from langchain_community.llms.llamacpp import LlamaCpp
 from langchain_community.vectorstores import Chroma
+from langchain_core.output_parsers import StrOutputParser
+from langchain_core.prompts import BasePromptTemplate, load_prompt
 from nltk import regexp_tokenize
 from PIL import Image
-
-# TODO: Move config file rewrites to test.py
-# TODO: getters
 
 
 class ConveresationManager:
@@ -48,7 +47,7 @@ class ConveresationManager:
 
         load_dotenv(find_dotenv())
         self.card_avatar = None
-        self.character_name = None
+        self.character_name: str = ""
 
         self.all_keys = self.parse_keys()
         self.question_refining_prompt = self.parse_question_refining_metadata_prompt()
@@ -57,15 +56,14 @@ class ConveresationManager:
         self.use_avatar_image = exists(self.avatar_image)
         self.retriever = self.instantiate_retriever()
         self.llm_model = self.instantiate_llm()
-        # Use basic conversation chain with buffered conversation fistory
-        self.conversation_chain = ConversationChain(
-            prompt=self.prompt,
-            llm=self.llm_model,
-            verbose=True,
-            memory=ConversationBufferWindowMemory(
-                k=int(getenv("BUFFER_K")), human_prefix="User", ai_prefix=self.character_name
-            ),
-        )
+        self.historylen = int(getenv("BUFFER_K"))
+        self.user_message_history: deque[str] = deque(maxlen=self.historylen)
+        self.ai_message_history: deque[str] = deque(maxlen=self.historylen)
+        output_parser = StrOutputParser()
+
+        self.conversation_chain = self.prompt | self.llm_model
+        self.conversation_chain_test = self.prompt | self.llm_model | output_parser
+        self.refine_chain = self.question_refining_prompt | self.llm_model | output_parser
 
     # Get metadata filter keys for this collection
     def parse_keys(self):
@@ -89,7 +87,7 @@ class ConveresationManager:
         else:
             return None
 
-    def parse_question_refining_metadata_prompt(self):
+    def parse_question_refining_metadata_prompt(self) -> BasePromptTemplate:
         prompt_template_dir = getenv("PROMPT_TEMPLATE_DIRECTORY")
         prompt_metadata_template_name = "question_refining_metadata_template.json"
         metadata_prompt_template_path = join(prompt_template_dir, prompt_metadata_template_name)
@@ -119,7 +117,7 @@ class ConveresationManager:
         )
         return filled_metadata_prompt
 
-    def parse_prompt(self):
+    def parse_prompt(self) -> BasePromptTemplate:
         # Currently the chat welcome message is read from chainlit.md file.
         script_root_path = dirname(realpath(__file__))
         help_file_path = join(script_root_path, "chainlit.md")
@@ -245,7 +243,7 @@ class ConveresationManager:
             vector_context=" ",
         )
 
-    def get_avatar_image(self):
+    def get_avatar_image(self) -> str:
         if self.card_avatar is None:
             prompt_dir = getenv("CHARACTER_CARD_DIR")
             prompt_name = getenv("CHARACTER_CARD")
@@ -259,7 +257,7 @@ class ConveresationManager:
         else:
             return self.card_avatar
 
-    def instantiate_retriever(self):
+    def instantiate_retriever(self) -> Chroma:
         if getenv("COLLECTION") == "":
             return None
 
@@ -309,7 +307,7 @@ class ConveresationManager:
 
         return db
 
-    def instantiate_llm(self):
+    def instantiate_llm(self) -> LlamaCpp:
         model_dir = getenv("MODEL_DIR")
         model = getenv("MODEL")
         model_source = join(model_dir, model)
@@ -344,24 +342,22 @@ class ConveresationManager:
         )
         return llm_model_init
 
-    def get_vector_context(self, message):
+    def get_vector_context(self, message) -> str:
         vector_context = ""
         if self.retriever:
             # TODO rework this. The question refining prompt can have poor accuracy
             # Use ner?
-            llm_chain_refine = LLMChain(prompt=self.question_refining_prompt, llm=self.llm_model)
-            metadata_result = llm_chain_refine.invoke(message)
-            metadata_query = metadata_result["text"]
+            metadata_result = self.refine_chain.invoke(message)
 
             self.chat_log.info(f"Query {message}")
-            self.chat_log.info(f"Query metadata {metadata_query}")
+            self.chat_log.info(f"Query metadata {metadata_result}")
             # Currently Chroma has no "like" implementation so this is a case sensitive hack with uuids
             # There is also an issue when filter has only one item since "in" expects multiple items
             # With one item, just use a dict with "uuid", "filter"
             filter_dict = {}
-            metadata_query = re.sub("Keywords?:?|keywords?:?|\\[.*\\]", "", metadata_query)
+            metadata_result = re.sub("Keywords?:?|keywords?:?|\\[.*\\]", "", metadata_result)
             if self.all_keys is not None and not self.all_keys.empty:
-                tokens = regexp_tokenize(metadata_query.lower(), r"\w+", gaps=False)
+                tokens = regexp_tokenize(metadata_result.lower(), r"\w+", gaps=False)
                 keys_df = self.all_keys[self.all_keys["keys"].isin(tokens)]
                 keys_dict = keys_df.to_dict()
                 filter_dict = keys_dict["keys"]
@@ -390,12 +386,52 @@ class ConveresationManager:
             self.chat_log.info(vector_context)
             return vector_context
 
-    def ask_question(self, message, callback):
+    def get_history(self) -> str:
+        message_history = ""
+        user_message_history_list = list(self.user_message_history)
+        ai_message_history_list = list(self.ai_message_history)
+        for x in range(len(user_message_history_list)):
+            user_message = user_message_history_list[x]
+            ai_message = ai_message_history_list[x]
+            new_line = "User: " + user_message + "\n" + self.character_name + ":" + ai_message + "\n"
+            message_history = message_history + new_line
+        return message_history
+
+    def update_history(self, message, result):
+        self.user_message_history.append(message)
+        self.ai_message_history.append(result)
+
+    async def ask_question_test(self, message: str):
         self.chat_log.info(message)
         vector_context = self.get_vector_context(message)
-        self.conversation_chain.prompt = self.conversation_chain.prompt.partial(vector_context=vector_context)
-        result = self.conversation_chain.invoke(message, callbacks=[callback])
-        return result["response"]
+        history = self.get_history()
+        query_input = {"input": message, "history": history, "vector_context": vector_context}
+        self.chat_log.info(f"query input: {query_input}")
+
+        self.conversation_chain_test = self.prompt | self.llm_model
+        chunks = []
+        async for chunk in self.conversation_chain_test.astream(
+            query_input,
+        ):
+            chunks.append(chunk)
+            print(chunk, flush=True)
+
+    async def ask_question(self, message: cl.Message) -> cl.Message:
+        self.chat_log.info(message.content)
+        vector_context = self.get_vector_context(message.content)
+        history = self.get_history()
+        query_input = {"input": message.content, "history": history, "vector_context": vector_context}
+        self.chat_log.info(f"query input: {query_input}")
+
+        self.conversation_chain_test = self.prompt | self.llm_model
+        result = cl.Message(content="")
+        async for chunk in self.conversation_chain_test.astream(
+            query_input,
+            config=RunnableConfig(callbacks=[cl.LangchainCallbackHandler()]),
+        ):
+            await result.stream_token(chunk)
+        self.update_history(message.content, result.content)
+        return result
 
     def get_character_name(self):
         return self.character_name

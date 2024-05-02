@@ -192,23 +192,6 @@ def test_embeddings(
         vector_context = vector_context + answer[0].page_content
     logging.info("--------------------------------------------------------------------")
     logging.info(vector_context)
-    # TODO mmr currenly does not work
-    # Has something to do with chroma integration?
-    # elif search_type == "mmr":
-    #    logging.info("Max marginal relevance search")
-    #    logging.info(f"There are {db._collection.count()} documents in the collection")
-    #    logging.debug(f"filter is: {where}")
-    #    logging.debug(f"DEBUG: {query}")
-    #    docs = db.max_marginal_relevance_search(query=query, k=k, fetch_k=10, lambda_mult=0.75, filter=where)
-    #
-    #    vector_context = ""
-    #    for answer in docs:
-    #        logging.debug("--------------------------------------------------------------------")
-    #        logging.debug(answer.page_content)
-    #        vector_context = vector_context + answer.page_content
-    #    logging.info("--------------------------------------------------------------------")
-    #    vector_context = vector_context.replace("\n\n", "\n")
-    #    logging.info(vector_context)
 
 
 def main(
