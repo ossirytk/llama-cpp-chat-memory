@@ -22,16 +22,8 @@ async def start():
         ).send()
 
 
-def get_answer(message, callback):
-    answer = conversation_manager.ask_question(message, callback)
-    return answer
-
-
 @cl.on_message
-async def main(message: str):
-    cb = cl.LangchainCallbackHandler(
-        stream_final_answer=True,
-        answer_prefix_tokens=["Assistant", "AI", conversation_manager.get_character_name()],
-    )
-    result = await cl.make_async(get_answer)(message=message.content, callback=cb)
-    await cl.Message(content=result).send()
+async def main(message: cl.Message):
+
+    result: cl.Message = await conversation_manager.ask_question(message)
+    await result.send()
