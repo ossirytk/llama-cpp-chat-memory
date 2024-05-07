@@ -2,7 +2,6 @@
 :mod:`textacy.spacier.core`: Convenient entry point for loading spaCy language pipelines
 and making spaCy docs.
 """
-from __future__ import annotations
 
 import functools
 import logging
@@ -11,13 +10,14 @@ import pathlib
 import spacy
 from cachetools import cached
 from cachetools.keys import hashkey
-from document_parsing.spacier import extensions
-from document_parsing.spacier import utils as sputils
-from document_parsing.utils import cache, errors, types, utils
 from spacy.language import Language
 from spacy.tokens import Doc
 
+from document_parsing.spacier import utils as sputils
+from document_parsing.utils import cache, errors, types, utils
+
 LOGGER = logging.getLogger(__name__)
+SNIPPET_SIZE = 50
 
 
 @cached(cache.LRU_CACHE, key=functools.partial(hashkey, "spacy_lang"))
@@ -37,7 +37,8 @@ def load_spacy_lang(name: str | pathlib.Path, **kwargs) -> Language:
         >>> en_nlp = textacy.load_spacy_lang("en_core_web_sm", disable=("parser",))
         >>> textacy.load_spacy_lang("ar")
         ...
-        OSError: [E050] Can't find model 'ar'. It doesn't seem to be a Python package or a valid path to a data directory.
+        OSError: [E050] Can't find model 'ar'.
+        It doesn't seem to be a Python package or a valid path to a data directory.
 
     Args:
         name: Name or path to the spaCy language pipeline to load.
@@ -110,7 +111,8 @@ def make_spacy_doc(
         >>> make_spacy_doc(doc, lang="en_core_web_sm")
         >>> make_spacy_doc(doc, lang="es_core_news_sm")
         ...
-        ValueError: `spacy.Vocab` used to process document must be the same as that used by the `lang` pipeline ('es_core_news_sm')
+        ValueError: `spacy.Vocab` used to process document must be the same
+        as that used by the `lang` pipeline ('es_core_news_sm')
 
     Args:
         data: Make a :class:`spacy.tokens.Doc` from a text or (text, metadata) pair.
@@ -187,44 +189,3 @@ def _make_spacy_doc_from_doc(doc: Doc, lang: types.LangLikeInContext) -> Doc:
         )
         raise ValueError(msg)
     return doc
-
-
-def get_doc_preview(doc: Doc) -> str:
-    """
-    Get a short preview of ``doc``, including the number of tokens and a snippet.
-    Typically used as a custom extension, like ``doc._.preview`` .
-    """
-    snippet = doc.text[:50].replace("\n", " ")
-    if len(snippet) == 50:
-        snippet = snippet[:47] + "..."
-    return f'Doc({len(doc)} tokens: "{snippet}")'
-
-
-def get_doc_meta(doc: Doc) -> dict:
-    """
-    Get custom metadata added to ``doc`` .
-    Typically used as a custom extension, like ``doc._.meta`` .
-    """
-    return doc.user_data.get("textacy", {}).get("meta", {})
-
-
-def set_doc_meta(doc: Doc, value: dict) -> None:
-    """
-    Add custom metadata ``value`` to ``doc`` .
-    Typically used as a custom extension, like ``doc._.meta = value`` .
-    """
-    if not isinstance(value, dict):
-        raise TypeError(errors.type_invalid_msg("value", type(value), dict))
-    try:
-        doc.user_data["textacy"]["meta"] = value
-    except KeyError:
-        # TODO: confirm that this is the same. it is, right??
-        doc.user_data["textacy"] = {"meta": value}
-
-
-@extensions.doc_extensions_registry.register("spacier")
-def _get_spacier_doc_extensions() -> dict[str, dict[str, types.DocExtFunc]]:
-    return {
-        "preview": {"getter": get_doc_preview},  # type: ignore
-        "meta": {"getter": get_doc_meta, "setter": set_doc_meta},  # type: ignore
-    }
