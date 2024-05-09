@@ -12,10 +12,12 @@ from multiprocessing import Manager, Pool
 from os.path import exists, join
 
 import pandas as pd
-from document_parsing.extract import entities, ngrams, terms, terms_to_strings
-from document_parsing.spacier import core
 from dotenv import find_dotenv, load_dotenv
 from spacy.tokens import Doc
+
+from document_parsing.extract import entities, ngrams, terms
+from document_parsing.extract.basics import terms_to_strings
+from document_parsing.spacier import core
 
 # This is the config for multiprocess logger
 # Setting the level to debug outputs multiprocess debug lines too

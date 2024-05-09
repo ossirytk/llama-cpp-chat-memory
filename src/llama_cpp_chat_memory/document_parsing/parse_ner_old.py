@@ -10,10 +10,12 @@ from functools import partial
 from os.path import exists, join
 
 import pandas as pd
-from document_parsing.extract import entities, ngrams, terms, terms_to_strings
-from document_parsing.spacier import core
 from dotenv import find_dotenv, load_dotenv
 from spacy.tokens import Doc
+
+from document_parsing.extract import entities, ngrams, terms
+from document_parsing.extract.basics import terms_to_strings
+from document_parsing.spacier import core
 
 logging.basicConfig(format="%(message)s", encoding="utf-8", level=logging.DEBUG)
 load_dotenv(find_dotenv())

@@ -5,72 +5,16 @@ Basics
 :mod:`textacy.extract.basics`: Extract basic components from a document or sentence
 via spaCy, with bells and whistles for filtering the results.
 """
-from __future__ import annotations
 
-from collections.abc import Collection, Iterable
+import operator
+from collections.abc import Callable, Collection, Iterable
 from functools import partial
 
 from cytoolz import itertoolz
-from document_parsing.utils import constants, errors, types, utils
 from spacy.parts_of_speech import DET
-from spacy.tokens import Span, Token
+from spacy.tokens import Span
 
-
-def words(
-    doclike: types.DocLike,
-    *,
-    filter_stops: bool = True,
-    filter_punct: bool = True,
-    filter_nums: bool = False,
-    include_pos: str | Collection[str] | None = None,
-    exclude_pos: str | Collection[str] | None = None,
-    min_freq: int = 1,
-) -> Iterable[Token]:
-    """
-    Extract an ordered sequence of words from a document processed by spaCy,
-    optionally filtering words by part-of-speech tag and frequency.
-
-    Args:
-        doclike
-        filter_stops: If True, remove stop words from word list.
-        filter_punct: If True, remove punctuation from word list.
-        filter_nums: If True, remove number-like words (e.g. 10, "ten")
-            from word list.
-        include_pos: Remove words whose part-of-speech tag IS NOT in the specified tags.
-        exclude_pos: Remove words whose part-of-speech tag IS in the specified tags.
-        min_freq: Remove words that occur in ``doclike`` fewer than ``min_freq`` times.
-
-    Yields:
-        Next token from ``doclike`` passing specified filters in order of appearance
-        in the document.
-
-    Raises:
-        TypeError: if ``include_pos`` or ``exclude_pos`` is not a str, a set of str,
-            or a falsy value
-
-    Note:
-        Filtering by part-of-speech tag uses the universal POS tag set; for details,
-        check spaCy's docs: https://spacy.io/api/annotation#pos-tagging
-    """
-    words_: Iterable[Token] = (w for w in doclike if not w.is_space)
-    if filter_stops is True:
-        words_ = (w for w in words_ if not w.is_stop)
-    if filter_punct is True:
-        words_ = (w for w in words_ if not w.is_punct)
-    if filter_nums is True:
-        words_ = (w for w in words_ if not w.like_num)
-    if include_pos:
-        include_pos_: set[str] = {pos.upper() for pos in utils.to_set(include_pos)}
-        words_ = (w for w in words_ if w.pos_ in include_pos_)
-    if exclude_pos:
-        exclude_pos_: set[str] = {pos.upper() for pos in utils.to_set(exclude_pos)}
-        words_ = (w for w in words_ if w.pos_ not in exclude_pos_)
-    if min_freq > 1:
-        words_ = list(words_)
-        freqs = itertoolz.frequencies(w.lower_ for w in words_)
-        words_ = (w for w in words_ if freqs[w.lower_] >= min_freq)
-
-    yield from words_
+from document_parsing.utils import constants, errors, types, utils
 
 
 def ngrams(
@@ -190,9 +134,7 @@ def entities(
             str, or a falsy value
     """
     ents = doclike.ents
-    # HACK: spacy's models have been erroneously tagging whitespace as entities
-    # https://github.com/explosion/spaCy/commit/1e6725e9b734862e61081a916baf440697b9971e
-    ents = (ent for ent in ents if not ent.text.isspace())
+
     include_types = _parse_ent_types(include_types, "include")
     exclude_types = _parse_ent_types(exclude_types, "exclude")
     if include_types:
@@ -371,3 +313,34 @@ def _get_ncs_extractor(ncs) -> types.DocLikeToSpans | None:
         return noun_chunks
     else:
         raise TypeError()
+
+
+def terms_to_strings(
+    terms: Iterable[types.SpanLike],
+    by: str | Callable[[types.SpanLike], str],
+) -> Iterable[str]:
+    """
+    Transform a sequence of terms as spaCy ``Token`` s or ``Span`` s into strings.
+
+    Args:
+        terms
+        by: Method by which terms are transformed into strings.
+            If "orth", terms are represented by their text exactly as written;
+            if "lower", by the lowercased form of their text;
+            if "lemma", by their base form w/o inflectional suffixes;
+            if a callable, must accept a ``Token`` or ``Span`` and return a string.
+
+    Yields:
+        Next term in ``terms``, as a string.
+    """
+    terms_: Iterable[str]
+    if by == "lower":
+        terms_ = (term.text.lower() for term in terms)
+    elif by in ("lemma", "orth"):
+        by_ = operator.attrgetter(f"{by}_")
+        terms_ = (by_(term) for term in terms)
+    elif callable(by):
+        terms_ = (by(term) for term in terms)
+    else:
+        raise ValueError(errors.value_invalid_msg("by", by, {"orth", "lower", "lemma", Callable}))
+    yield from terms_
