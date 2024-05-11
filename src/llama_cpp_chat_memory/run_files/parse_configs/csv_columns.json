@@ -1,10 +1,57 @@
 {
-    "columns": [
-        "index",
-        "name",
-        "url",
-        "timestamp",
-        "character name",
-        "data"
-    ]
+    "filter1": {
+        "columns": [
+            "index",
+            "thread_title",
+            "thread_href",
+            "message_timestamp",
+            "message_username",
+            "message"
+        ],
+        "datafield": "message"
+    },
+    "filter2": {
+        "columns": [
+            "index",
+            "story_title",
+            "story_author",
+            "story_date",
+            "story_tags",
+            "story_summary",
+            "story_href",
+            "story_header",
+            "story",
+            "story_footer"
+        ],
+        "datafield": "story"
+    },
+    "filter3": {
+        "columns": [
+            "index",
+            "story_title",
+            "story_author_name",
+            "story_author_email",
+            "story_codes",
+            "story_date_added",
+            "story_preamble",
+            "story"
+        ],
+        "datafield": "story"
+    },
+    "filter4": {
+        "columns": [
+            "index",
+            "story_title",
+            "story_author",
+            "story_summary",
+            "story_category",
+            "story_tags",
+            "story_date_published",
+            "story_score",
+            "story_views",
+            "story_author_notes",
+            "story"
+        ],
+        "datafield": "story"
+    }
 }

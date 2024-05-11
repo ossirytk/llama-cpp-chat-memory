@@ -63,7 +63,7 @@ def main(
 
 if __name__ == "__main__":
     # Read the data directory, collection name, and persist directory
-    parser = argparse.ArgumentParser(description="Load documents from a directory into a Chroma collection")
+    parser = argparse.ArgumentParser(description="Web scrape web pages into text")
 
     # Add arguments
     parser.add_argument(

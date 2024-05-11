@@ -12,7 +12,9 @@ python -m spacy download en_core_web_lg
 You might want to play with the chunk size and overlap based on your text documents<BR>
 The example documents include a txt file for skynet embeddings and json lorebooks for [Hogwarts](https://chub.ai/lorebooks/deadgirlz/hogwarts-legacy-lore-b819ccba) and [Honkai Impact](https://chub.ai/lorebooks/Zareh-Haadris/lorebook-honkai-impact-b1fcfc23)<BR>
 The supported lorebook formats are chub inferred AgnAIstic and SillyTavern original source.
-For pdf files there is a pdf file of short stories from Fyodor Dostoyevsky included The source is Internet Archive, the copy is in public domain. The pdf text quality is quite poor thought, so I recommend getting another file,
+For pdf files there is a pdf file of short stories from Fyodor Dostoyevsky included The source is Internet Archive, the copy is in public domain. The pdf text quality is quite poor thought, so I recommend getting another file.
+
+Performance for files over 200mb is not great. Parsing a large text with a large keyfile will result in poor performance. It's more effective to have smaller colletions that have their own keyfiles rather that one large collection with one keyfile. I recommend splitting sollections my subject category and then switching as needed.
 
 **!!Important!!.** You need to make sure that the documents, character_storage and key_storage folders exist.
 
