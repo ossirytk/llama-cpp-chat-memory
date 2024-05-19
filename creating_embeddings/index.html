@@ -67,6 +67,8 @@
               <ul class="current">
                   <li class="toctree-l1"><a class="reference internal" href="../webscraping/">Webscraping</a>
                   </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../csv/">Csv filtering and parsing</a>
+                  </li>
                   <li class="toctree-l1"><a class="reference internal" href="../named_entity_recognition/">Named Entity Recognition(NER)</a>
                   </li>
                   <li class="toctree-l1 current"><a class="reference internal current" href="./">Creating embeddings</a>
@@ -118,7 +120,8 @@ python -m spacy download en_core_web_lg
 <p>You might want to play with the chunk size and overlap based on your text documents<BR>
 The example documents include a txt file for skynet embeddings and json lorebooks for <a href="https://chub.ai/lorebooks/deadgirlz/hogwarts-legacy-lore-b819ccba">Hogwarts</a> and <a href="https://chub.ai/lorebooks/Zareh-Haadris/lorebook-honkai-impact-b1fcfc23">Honkai Impact</a><BR>
 The supported lorebook formats are chub inferred AgnAIstic and SillyTavern original source.
-For pdf files there is a pdf file of short stories from Fyodor Dostoyevsky included The source is Internet Archive, the copy is in public domain. The pdf text quality is quite poor thought, so I recommend getting another file,</p>
+For pdf files there is a pdf file of short stories from Fyodor Dostoyevsky included The source is Internet Archive, the copy is in public domain. The pdf text quality is quite poor thought, so I recommend getting another file.</p>
+<p>Performance for files over 200mb is not great. Parsing a large text with a large keyfile will result in poor performance. It's more effective to have smaller colletions that have their own keyfiles rather that one large collection with one keyfile. I recommend splitting sollections my subject category and then switching as needed.</p>
 <p><strong>!!Important!!.</strong> You need to make sure that the documents, character_storage and key_storage folders exist.</p>
 <p>Textacy parsing will use NER to parse keys from the document using sentence transformers. This keys can be used as Chroma metadata,
 NOTE: Textacy parsing will create a key file in key_storage that can be used by text parsing. Json files will create keys automatically if present in json file.</p>

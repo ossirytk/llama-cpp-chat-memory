@@ -3,18 +3,18 @@
 <head>
     <meta charset="utf-8" />
     <meta http-equiv="X-UA-Compatible" content="IE=edge" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><link rel="canonical" href="https://ossirytk.github.io/llama-cpp-chat-memory/UNLICENSE/" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><link rel="canonical" href="https://ossirytk.github.io/llama-cpp-chat-memory/csv/" />
       <link rel="shortcut icon" href="../img/favicon.ico" />
-    <title>License - Llama.cpp chat</title>
+    <title>Csv filtering and parsing - Llama.cpp chat</title>
     <link rel="stylesheet" href="../css/theme.css" />
     <link rel="stylesheet" href="../css/theme_extra.css" />
         <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/styles/github.min.css" />
     
       <script>
         // Current page data
-        var mkdocs_page_name = "License";
-        var mkdocs_page_input_path = "UNLICENSE.md";
-        var mkdocs_page_url = "/llama-cpp-chat-memory/UNLICENSE/";
+        var mkdocs_page_name = "Csv filtering and parsing";
+        var mkdocs_page_input_path = "csv.md";
+        var mkdocs_page_url = "/llama-cpp-chat-memory/csv/";
       </script>
     
     <!--[if lt IE 9]>
@@ -64,10 +64,12 @@
                   </li>
               </ul>
               <p class="caption"><span class="caption-text">Working with documents</span></p>
-              <ul>
+              <ul class="current">
                   <li class="toctree-l1"><a class="reference internal" href="../webscraping/">Webscraping</a>
                   </li>
-                  <li class="toctree-l1"><a class="reference internal" href="../csv/">Csv filtering and parsing</a>
+                  <li class="toctree-l1 current"><a class="reference internal current" href="./">Csv filtering and parsing</a>
+    <ul class="current">
+    </ul>
                   </li>
                   <li class="toctree-l1"><a class="reference internal" href="../named_entity_recognition/">Named Entity Recognition(NER)</a>
                   </li>
@@ -75,10 +77,10 @@
                   </li>
               </ul>
               <p class="caption"><span class="caption-text">Extras</span></p>
-              <ul class="current">
+              <ul>
                   <li class="toctree-l1"><a class="reference internal" href="../examples/">Some Examples</a>
                   </li>
-                  <li class="toctree-l1 current"><a class="reference internal current" href="./">License</a>
+                  <li class="toctree-l1"><a class="reference internal" href="../UNLICENSE/">License</a>
                   </li>
               </ul>
       </div>
@@ -95,10 +97,10 @@
         <div class="rst-content"><div role="navigation" aria-label="breadcrumbs navigation">
   <ul class="wy-breadcrumbs">
     <li><a href=".." class="icon icon-home" aria-label="Docs"></a></li>
-          <li class="breadcrumb-item">Extras</li>
-      <li class="breadcrumb-item active">License</li>
+          <li class="breadcrumb-item">Working with documents</li>
+      <li class="breadcrumb-item active">Csv filtering and parsing</li>
     <li class="wy-breadcrumbs-aside">
-          <a href="https://github.com/ossirytk/llama-cpp-chat-memory/edit/master/docs/UNLICENSE.md" class="icon icon-github"> Edit on GitHub</a>
+          <a href="https://github.com/ossirytk/llama-cpp-chat-memory/edit/master/docs/csv.md" class="icon icon-github"> Edit on GitHub</a>
     </li>
   </ul>
   <hr/>
@@ -106,31 +108,14 @@
           <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
             <div class="section" itemprop="articleBody">
               
-                <p>This is free and unencumbered software released into the public domain.</p>
-<p>Anyone is free to copy, modify, publish, use, compile, sell, or
-distribute this software, either in source code form or as a compiled
-binary, for any purpose, commercial or non-commercial, and by any
-means.</p>
-<p>In jurisdictions that recognize copyright laws, the author or authors
-of this software dedicate any and all copyright interest in the
-software to the public domain. We make this dedication for the benefit
-of the public at large and to the detriment of our heirs and
-successors. We intend this dedication to be an overt act of
-relinquishment in perpetuity of all present and future rights to this
-software under copyright law.</p>
-<p>THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
-EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
-MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.
-IN NO EVENT SHALL THE AUTHORS BE LIABLE FOR ANY CLAIM, DAMAGES OR
-OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE,
-ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
-OTHER DEALINGS IN THE SOFTWARE.</p>
-<p>For more information, please refer to <a href="https://unlicense.org">https://unlicense.org</a></p>
+                <h3 id="named-entity-recognitionner">Named Entity Recognition(NER)</h3>
+<p>You can use filter_csv.py and parse_csv_to_text.py to process csv files. The filter script will remove rows using whitelists and blacklists. You can set a filter for any column. This is useful when you want to split large documents to more manageable portions. The csv to text parsing document filters web elements if you have webscraped data into csv.</p>
               
             </div>
           </div><footer>
     <div class="rst-footer-buttons" role="navigation" aria-label="Footer Navigation">
-        <a href="../examples/" class="btn btn-neutral float-left" title="Some Examples"><span class="icon icon-circle-arrow-left"></span> Previous</a>
+        <a href="../webscraping/" class="btn btn-neutral float-left" title="Webscraping"><span class="icon icon-circle-arrow-left"></span> Previous</a>
+        <a href="../named_entity_recognition/" class="btn btn-neutral float-right" title="Named Entity Recognition(NER)">Next <span class="icon icon-circle-arrow-right"></span></a>
     </div>
 
   <hr/>
@@ -157,8 +142,10 @@ OTHER DEALINGS IN THE SOFTWARE.</p>
         </span>
     
     
-      <span><a href="../examples/" style="color: #fcfcfc">&laquo; Previous</a></span>
+      <span><a href="../webscraping/" style="color: #fcfcfc">&laquo; Previous</a></span>
     
+    
+      <span><a href="../named_entity_recognition/" style="color: #fcfcfc">Next &raquo;</a></span>
     
   </span>
 </div>
