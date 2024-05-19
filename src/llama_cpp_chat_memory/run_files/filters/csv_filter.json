@@ -1,0 +1,23 @@
+{
+    "filters": [
+        {
+            "filter_field": "tags",
+            "whitelist": [
+                "customer",
+                "influencer"
+            ],
+            "blacklist": [
+                "admin",
+                "hr",
+                "sales"
+            ]
+        },
+        {
+            "filter_field": "data",
+            "whitelist": [
+                "Product Release",
+                "Sales Campaign"
+            ]
+        }
+    ]
+}

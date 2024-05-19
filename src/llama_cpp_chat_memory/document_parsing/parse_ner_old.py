@@ -265,7 +265,9 @@ def main(
 
 if __name__ == "__main__":
     # Read the data directory, collection name, and persist directory
-    parser = argparse.ArgumentParser(description="Load documents from a directory into a Chroma collection")
+    parser = argparse.ArgumentParser(
+        description="Parse ner keywords from text using spacy and grammar configuration files."
+    )
 
     # Add arguments
     parser.add_argument(

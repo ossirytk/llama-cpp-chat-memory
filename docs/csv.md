@@ -1,0 +1,2 @@
+### Named Entity Recognition(NER)
+You can use filter_csv.py and parse_csv_to_text.py to process csv files. The filter script will remove rows using whitelists and blacklists. You can set a filter for any column. This is useful when you want to split large documents to more manageable portions. The csv to text parsing document filters web elements if you have webscraped data into csv.

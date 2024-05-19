@@ -3,11 +3,10 @@ import glob
 import json
 import logging
 import os
-from os.path import exists, join, splitext
+from os.path import exists, join
 
 import pandas as pd
 from dotenv import find_dotenv, load_dotenv
-from trafilatura import extract
 
 logging.basicConfig(format="%(message)s", encoding="utf-8", level=logging.DEBUG)
 # logging.basicConfig(format="%(message)s", encoding="utf-8", level=logging.INFO)
@@ -45,11 +44,8 @@ def main(
         logging.debug("Could not load parse config file")
         return
 
-    parse_filters = filter_configs["filters"]
-
     for csv_document in documents_paths_csv:
         logging.debug(f"Processing: {csv_document}")
-        data = ""
         columns_list = []
         with open(csv_document, encoding="utf8") as f:
             first_line = f.readline()
@@ -58,40 +54,41 @@ def main(
         for column_conf_key in column_configs:
             columns = column_configs[column_conf_key]["columns"]
             columns_string = ",".join(columns)
-            index_columns_string = "index" + columns_string
-            if columns_line in (columns_string, index_columns_string):
+            if columns_string == columns_line:
                 columns_list = columns
-                data = column_configs[column_conf_key]["datafield"]
                 logging.debug("Match found")
                 break
 
         logging.debug("Reading to datafile")
         df = pd.read_csv(csv_document, header=0, names=columns_list)
-        # logging.debug(df.head())
-        # logging.debug(df[data].head())
+        item_count = df.shape[0]
+        logging.debug(f"item count: {item_count}")
+        logging.debug(df.head())
 
-        for parse_filter in parse_filters:
-            filter_iterator = iter(parse_filter)
-            parse_regex = next(filter_iterator)
-            parse_replacment = next(filter_iterator)
-            logging.debug(f"Applying filter: {parse_regex}")
-            df[data] = df[data].replace(
-                to_replace=parse_filter[parse_regex], value=parse_filter[parse_replacment], regex=True
-            )
-        base = splitext(csv_document)[0]
-        doc_path = base + ".txt"
-        logging.debug("Writing to file")
-        with open(file=doc_path, mode="a", encoding="utf-8") as doc_file:
-            for line in df[data].to_numpy():
-                clean_text = extract(line)
-                if clean_text is not None:
-                    doc_file.write(clean_text + "\n\n")
-                # logging.info(clean_text)
+        for csv_filter in filter_configs["filters"]:
+            if "whitelist" in csv_filter:
+                whitelist = csv_filter["whitelist"]
+                tags = csv_filter["filter_field"]
+                df = df[df[tags].apply(lambda x, wordlist=set(whitelist): any(word in x for word in wordlist))]
+                item_count = df.shape[0]
+                logging.debug(f"item count: {item_count}")
+                logging.debug(df.head())
+
+            if "blacklist" in csv_filter:
+                blacklist = csv_filter["blacklist"]
+                tags = csv_filter["filter_field"]
+                df = df[df[tags].apply(lambda x, wordlist=set(blacklist): not any(word in x for word in wordlist))]
+                item_count = df.shape[0]
+                logging.debug(f"item count: {item_count}")
+                logging.debug(df.head())
+
+        output = documents_directory + "/filtered.csv"
+        df.to_csv(output, index=False)
 
 
 if __name__ == "__main__":
     # Read the data directory, collection name, and persist directory
-    parser = argparse.ArgumentParser(description="Parse csv file to a text file and filter out noise from web scrapes.")
+    parser = argparse.ArgumentParser(description="Filter rows from a csv file using whitelist and blacklist filters")
 
     # Add arguments
     parser.add_argument(
@@ -125,7 +122,7 @@ if __name__ == "__main__":
     parser.add_argument(
         "--filter-config-file",
         type=str,
-        default="web_scrape_filter.json",
+        default="csv_filter.json",
         help="The parse config file",
     )
 

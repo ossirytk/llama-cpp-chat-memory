@@ -10,6 +10,7 @@ from collections.abc import Iterable
 from functools import partial
 from multiprocessing import Manager, Pool
 from os.path import exists, join
+from queue import Queue
 
 import pandas as pd
 from dotenv import find_dotenv, load_dotenv
@@ -233,7 +234,7 @@ def read_chuncks(text_corpus, chunk_size, chunk_overlap, que, reader_num) -> boo
     return True
 
 
-def process_chuncks(model, parse_config_directory, parse_config_file, read_que, write_que, name) -> bool:
+def process_chuncks(model, parse_config_directory, parse_config_file, read_que: Queue, write_que: Queue, name) -> bool:
     NER_LOGGER.info(f"Processor {name} reading chuncks from que")
     while True:
         try:
@@ -253,7 +254,7 @@ def process_chuncks(model, parse_config_directory, parse_config_file, read_que, 
     return True
 
 
-def clean_and_merge_chunks(que, name) -> pd.DataFrame:
+def clean_and_merge_chunks(que: Queue, name) -> pd.DataFrame:
     NER_LOGGER.info(f"cleaner {name} reading chuncks from que")
     df = None
     while True:
@@ -387,7 +388,9 @@ def main(
 
 if __name__ == "__main__":
     # Read the data directory, collection name, and persist directory
-    parser = argparse.ArgumentParser(description="Load documents from a directory into a Chroma collection")
+    parser = argparse.ArgumentParser(
+        description="Parse ner keywords from text using spacy and grammar configuration files."
+    )
 
     # Add arguments
     parser.add_argument(

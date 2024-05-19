@@ -93,7 +93,7 @@ def main(
 
 if __name__ == "__main__":
     # Read the data directory, collection name, and persist directory
-    parser = argparse.ArgumentParser(description="Load documents from a directory into a Chroma collection")
+    parser = argparse.ArgumentParser(description="Parse pdf documents to documents and upload to chroma")
 
     # Add arguments
     parser.add_argument(
