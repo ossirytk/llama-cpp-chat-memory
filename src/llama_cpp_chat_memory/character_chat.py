@@ -1,4 +1,5 @@
 import chainlit as cl
+from chainlit.input_widget import Select
 from conversation_manager import ConveresationManager
 
 conversation_manager = ConveresationManager()
@@ -13,6 +14,28 @@ def rename(orig_author: str):
 
 @cl.on_chat_start
 async def start():
+    await cl.ChatSettings(
+        [
+            Select(
+                id="prompt_template_options",
+                label="Prompt Templates",
+                values=conversation_manager.get_prompt_templates(),
+                initial_index=conversation_manager.get_prompt_template_index(),
+            ),
+            Select(
+                id="context_collection",
+                label="Context Collection",
+                values=conversation_manager.get_context_collections(),
+                initial_index=conversation_manager.get_context_index(),
+            ),
+            Select(
+                id="mex_collection",
+                label="Mex. Collection",
+                values=conversation_manager.get_mes_collections(),
+                initial_index=conversation_manager.get_mes_index(),
+            ),
+        ]
+    ).send()
     # Set the chatbot icon to character icon
     if conversation_manager.get_use_avatar_image():
         await cl.Avatar(
@@ -20,6 +43,11 @@ async def start():
             path=conversation_manager.get_avatar_image_path(),
             size="large",
         ).send()
+
+
+@cl.on_settings_update
+async def setup_agent(settings: dict[str, str]):
+    conversation_manager.update_settings(settings)
 
 
 @cl.on_message

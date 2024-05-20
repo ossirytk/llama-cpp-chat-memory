@@ -24,7 +24,7 @@ Note that this example is for powershell and for the latest llama-cpp-python. Yo
 
 Get a gguf model from a site like
 [The Bloke](https://huggingface.co/models?sort=modified&search=theBloke+gguf)
-and a character card and lorebooks from a site like [Chub.ai](https://chub.ai/) or make your own with [character editor](https://zoltanai.github.io/character-editor/)<BR>
+and a character card and lorebooks from a site like [Character hub](https://www.characterhub.org/) or make your own with [character editor](https://character-tools.srjuggernaut.dev/character-editor)<BR>
 
 Change the .env_test to .env and make sure that the correct folders exist.</BR>
 

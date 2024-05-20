@@ -1,0 +1,21 @@
+{
+    "prompt_template_default": "conversation_template.json",
+    "prompt_template_options": [
+        "conversation_template.json",
+        "conversation_template2.json"
+    ],
+    "mex_default": "none",
+    "mex_options": [
+        "none",
+        "assistant",
+        "hr",
+        "admin"
+    ],
+    "context_default": "none",
+    "context_options": [
+        "none",
+        "programming",
+        "finances",
+        "support"
+    ]
+}
