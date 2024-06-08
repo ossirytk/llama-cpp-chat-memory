@@ -149,10 +149,6 @@
 <td>Prompt template are stored here</td>
 </tr>
 <tr>
-<td>PROMPT_TEMPLATE</td>
-<td>question_generation_template.json</td>
-</tr>
-<tr>
 <td>REPLACE_YOU</td>
 <td>Replace references to "You" in card with "User"</td>
 </tr>
@@ -161,19 +157,15 @@
 <td>dir for NER keys for chroma</td>
 </tr>
 <tr>
-<td>USE_KEY_STORAGE</td>
-<td>Use NER keys for Chroma metadata</td>
-</tr>
-<tr>
-<td>COLLECTION</td>
-<td>Chroma collection to use. "" to disable Chroma</td>
+<td>COLLECTION_CONFIG</td>
+<td>Path to run config file for collection and prompt</td>
 </tr>
 <tr>
 <td>EMBEDDINGS_TYPE</td>
 <td>llama/spacy/hugginface</td>
 </tr>
 <tr>
-<td>EMBEDDINGS_model</td>
+<td>EMBEDDINGS_MODEL</td>
 <td>spacy/hugginface model name (needs to be installed)</td>
 </tr>
 <tr>
@@ -214,7 +206,7 @@
 </tr>
 <tr>
 <td>USE_MMAP</td>
-<td>Allows only the necessary parts to be loaded into memory and offloading the rest. Default true</td>
+<td>Allows only the necessary parts to be loaded into memory and offloading the rest. Default false</td>
 </tr>
 <tr>
 <td>TEMPERATURE</td>
@@ -249,6 +241,10 @@
 <td>Context size</td>
 </tr>
 <tr>
+<td>N_BATCH</td>
+<td>Message write batch size</td>
+</tr>
+<tr>
 <td>MAX_TOKENS</td>
 <td>Max tokens. Default 256</td>
 </tr>
@@ -259,6 +255,9 @@
 <p>Filters folder defines the general webscrape filters to clean the documents. This file uses regex and can easily be modified to add extra filtering.</p>
 <p>Parse_configs defines the expected csv column structure and ner type parsing. This includes noun engrams, entities, noun chunks and parse type.</p>
 <p>Web scrape configs define the web pages fo a scrape. This is convinient if you want to scrape multiple pages.</p>
+<h3 id="run-config">Run Config</h3>
+<p>The run config in run_config.json in the run_files folder defines the options for chat run settings. The run config sets the defaults for message collection, context collection and for the prompt template. The config also gives the list of alternative collection and prompt settings. These can be changed while the chat is running from the chat settings menu.
+<img alt="Settings Panel" src="../img/settings_panel.png" /></p>
               
             </div>
           </div><footer>
