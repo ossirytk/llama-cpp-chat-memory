@@ -18,6 +18,7 @@ from langchain.schema.runnable.config import RunnableConfig
 from langchain_community.embeddings import HuggingFaceEmbeddings, LlamaCppEmbeddings
 from langchain_community.llms.llamacpp import LlamaCpp
 from langchain_community.vectorstores import Chroma
+from langchain_core.embeddings import Embeddings
 from langchain_core.output_parsers import StrOutputParser
 from langchain_core.prompts import BasePromptTemplate, load_prompt
 from nltk import regexp_tokenize
@@ -46,38 +47,75 @@ class ConveresationManager:
         self.chat_log = logging.getLogger(logging_handle)
 
         load_dotenv(find_dotenv())
+
+        # TODO Test Builder
+
+        # Character card details
         self.card_avatar = None
         self.character_name: str = ""
+        self.description: str = ""
+        self.scenario: str = ""
+        self.mes_example: str = ""
+        self.llama_input: str = ""
+        self.llama_instruction: str = ""
+        self.llama_response: str = ""
+        self.llama_endtoken: str = ""
 
-        self.all_keys = self.parse_keys()
+        # Collections and template
+        self.prompt_template_dir: str = ""
+        self.mes_collection_name: str = ""
+        self.context_collection_name: str = ""
+        self.prompt_template: str = ""
+
+        # Init things
+        self.collections_config = self.parse_collections_config()
+        self.all_mes_keys = self.parse_keys("mex_default")
+        self.all_context_keys = self.parse_keys("context_default")
         self.question_refining_prompt = self.parse_question_refining_metadata_prompt()
         self.prompt = self.parse_prompt()
         self.avatar_image = self.get_avatar_image()
         self.use_avatar_image = exists(self.avatar_image)
-        self.retriever = self.instantiate_retriever()
+        self.embedder = self.instantiate_embeddings()
+        self.mes_retriever = self.instantiate_retriever("mex_default")
+        self.context_retriever = self.instantiate_retriever("context_default")
         self.llm_model = self.instantiate_llm()
         self.historylen = int(getenv("BUFFER_K"))
         self.user_message_history: deque[str] = deque(maxlen=self.historylen)
         self.ai_message_history: deque[str] = deque(maxlen=self.historylen)
         output_parser = StrOutputParser()
 
+        # Initial chains
         self.conversation_chain = self.prompt | self.llm_model
         self.conversation_chain_test = self.prompt | self.llm_model | output_parser
         self.refine_chain = self.question_refining_prompt | self.llm_model | output_parser
 
+    def parse_collections_config(self):
+        collection_config_path = getenv("COLLECTION_CONFIG")
+        config_json = None
+        if exists(collection_config_path):
+            with open(collection_config_path) as key_file:
+                content = key_file.read()
+            # TODO Should throw some fancy error here if this does not exist
+            config_json = json.loads(content)
+        return config_json
+
     # Get metadata filter keys for this collection
-    def parse_keys(self):
-        use_keys = getenv("USE_KEY_STORAGE")
-        collection_name = getenv("COLLECTION")
+    def parse_keys(self, vector_type: str):
+        if vector_type in ("mex_default", "context_default"):
+            collection_name = self.collections_config[vector_type]
+            self.chat_log.debug("Using default keys")
+        else:
+            collection_name = vector_type
+            self.chat_log.debug(f"Using keys for: {vector_type}")
         all_keys = None
-        if use_keys:
+        if collection_name != "none":
             key_storage = getenv("KEY_STORAGE_DIRECTORY")
             key_storage_path = join(key_storage, collection_name + ".json")
             if exists(key_storage_path):
                 with open(key_storage_path) as key_file:
                     content = key_file.read()
                 all_keys = json.loads(content)
-                self.chat_log.debug(f"Loading filter list from: {key_storage_path}")
+                self.chat_log.info(f"Loading filter list from: {key_storage_path}")
                 self.chat_log.debug(f"Filter keys: {all_keys}")
 
         if all_keys is not None and "Content" in all_keys:
@@ -88,9 +126,10 @@ class ConveresationManager:
             return None
 
     def parse_question_refining_metadata_prompt(self) -> BasePromptTemplate:
-        prompt_template_dir = getenv("PROMPT_TEMPLATE_DIRECTORY")
+        # TODO RUN CONFIG PROMPT TEMPLATE
+        self.prompt_template_dir = getenv("PROMPT_TEMPLATE_DIRECTORY")
         prompt_metadata_template_name = "question_refining_metadata_template.json"
-        metadata_prompt_template_path = join(prompt_template_dir, prompt_metadata_template_name)
+        metadata_prompt_template_path = join(self.prompt_template_dir, prompt_metadata_template_name)
         metadata_prompt = load_prompt(metadata_prompt_template_path)
         if getenv("MODEL_TYPE") == "alpaca":
             llama_instruction = "### Instruction:"
@@ -124,9 +163,9 @@ class ConveresationManager:
         prompt_dir = getenv("CHARACTER_CARD_DIR")
         prompt_name = getenv("CHARACTER_CARD")
         prompt_source = join(prompt_dir, prompt_name)
-        prompt_template_dir = getenv("PROMPT_TEMPLATE_DIRECTORY")
-        prompt_template_name = getenv("PROMPT_TEMPLATE")
-        prompt_template_path = join(prompt_template_dir, prompt_template_name)
+
+        self.prompt_template = self.collections_config["prompt_template_default"]
+        prompt_template_path = join(self.prompt_template_dir, self.prompt_template)
         replace_you = getenv("REPLACE_YOU")
         extension = splitext(prompt_source)[1]
         match extension:
@@ -186,13 +225,18 @@ class ConveresationManager:
         elif getenv("MODEL_TYPE") == "mistral":
             llama_instruction = "[INST]"
             llama_input = ""
-            llama_response = "[/INST]\n"
+            llama_response = "[/INST]"
             llama_endtoken = ""
         elif getenv("MODEL_TYPE") == "chatml":
             llama_instruction = "<|system|>"
             llama_input = "<|user|>"
-            llama_response = "<|assistant|>\n"
+            llama_response = "<|assistant|>"
             llama_endtoken = "</s>"
+        elif getenv("MODEL_TYPE") == "solar":
+            llama_instruction = ""
+            llama_input = "<s> ### User:"
+            llama_response = "### Assistant:"
+            llama_endtoken = ""
         else:
             llama_instruction = ""
             llama_input = ""
@@ -229,6 +273,14 @@ class ConveresationManager:
             mes_example = mes_example.replace("You", "User")
             first_message = first_message.replace("You", "User")
 
+        self.description = description
+        self.scenario = scenario
+        self.mes_example = mes_example
+        self.llama_input = llama_input
+        self.llama_instruction = llama_instruction
+        self.llama_response = llama_response
+        self.llama_endtoken = llama_endtoken
+
         with open(help_file_path, "w") as w:
             w.write(first_message)
         return prompt.partial(
@@ -242,6 +294,22 @@ class ConveresationManager:
             llama_endtoken=llama_endtoken,
             vector_context=" ",
         )
+
+    def change_prompt(self, new_template: str):
+        prompt_template_path = join(self.prompt_template_dir, new_template)
+        prompt = load_prompt(prompt_template_path)
+        self.prompt = prompt.partial(
+            character=self.character_name,
+            description=self.description,
+            scenario=self.scenario,
+            mes_example=self.mes_example,
+            llama_input=self.llama_input,
+            llama_instruction=self.llama_instruction,
+            llama_response=self.llama_response,
+            llama_endtoken=self.llama_endtoken,
+            vector_context=" ",
+        )
+        self.prompt_template = new_template
 
     def get_avatar_image(self) -> str:
         if self.card_avatar is None:
@@ -257,18 +325,16 @@ class ConveresationManager:
         else:
             return self.card_avatar
 
-    def instantiate_retriever(self) -> Chroma:
-        if getenv("COLLECTION") == "":
+    def instantiate_embeddings(self) -> Embeddings:
+        self.mes_collection_name = self.collections_config["mex_default"]
+        self.context_collection_name = self.collections_config["context_default"]
+        if self.mes_collection_name == "none" and self.context_collection_name == "none":
             return None
 
         model_dir = getenv("MODEL_DIR")
         model = getenv("MODEL")
         model_source = join(model_dir, model)
         embeddings_model = getenv("EMBEDDINGS_MODEL")
-
-        client = chromadb.PersistentClient(
-            path=getenv("PERSIST_DIRECTORY"), settings=Settings(anonymized_telemetry=False)
-        )
 
         embeddings_type = getenv("EMBEDDINGS_TYPE")
 
@@ -298,11 +364,30 @@ class ConveresationManager:
         else:
             error_message = f"Unsupported embeddings type: {embeddings_type}"
             raise ValueError(error_message)
+
+        return embedder
+
+    def instantiate_retriever(self, retriever_string: str) -> Chroma:
+        if retriever_string in ("mex_default", "context_default"):
+            self.chat_log.info("instantiate retriver with default")
+            collection_name = self.collections_config[retriever_string]
+        else:
+            self.chat_log.info(f"Setting retriever to: {retriever_string}")
+            collection_name = retriever_string
+
+        if self.embedder is None or collection_name == "none":
+            self.chat_log.info("Embedder is None or collection name is none")
+            return None
+
+        client = chromadb.PersistentClient(
+            path=getenv("PERSIST_DIRECTORY"), settings=Settings(anonymized_telemetry=False)
+        )
+
         db = Chroma(
             client=client,
-            collection_name=getenv("COLLECTION"),
+            collection_name=collection_name,
             persist_directory=getenv("PERSIST_DIRECTORY"),
-            embedding_function=embedder,
+            embedding_function=self.embedder,
         )
 
         return db
@@ -342,9 +427,23 @@ class ConveresationManager:
         )
         return llm_model_init
 
-    def get_vector_context(self, message) -> str:
+    def get_vector(self, message: str, vector_type: str) -> str:
+        retriever = None
+        all_keys = None
+        if vector_type == "mes":
+            self.chat_log.info("Vector type: mes")
+            retriever = self.mes_retriever
+            all_keys = self.all_mes_keys
+        elif vector_type == "context":
+            self.chat_log.info("Vector type: Context")
+            retriever = self.context_retriever
+            all_keys = self.all_context_keys
+        else:
+            self.chat_log.info("Vector type: None")
+            retriever = None
+
         vector_context = ""
-        if self.retriever:
+        if retriever:
             # TODO rework this. The question refining prompt can have poor accuracy
             # Use ner?
             metadata_result = self.refine_chain.invoke(message)
@@ -356,11 +455,18 @@ class ConveresationManager:
             # With one item, just use a dict with "uuid", "filter"
             filter_dict = {}
             metadata_result = re.sub("Keywords?:?|keywords?:?|\\[.*\\]", "", metadata_result)
-            if self.all_keys is not None and not self.all_keys.empty:
-                tokens = regexp_tokenize(metadata_result.lower(), r"\w+", gaps=False)
-                keys_df = self.all_keys[self.all_keys["keys"].isin(tokens)]
+            if len(metadata_result.split()) > 1 and all_keys is not None and not all_keys.empty:
+                # TODO improve this
+                tokens = regexp_tokenize(metadata_result, r"\w+", gaps=False)
+                keys_df = all_keys[all_keys["keys"].isin(tokens)]
                 keys_dict = keys_df.to_dict()
                 filter_dict = keys_dict["keys"]
+            elif len(metadata_result.split()) == 1:
+                keys_df = all_keys[all_keys["keys"] == metadata_result]
+                keys_dict = keys_df.to_dict()
+                filter_dict = keys_dict["keys"]
+            else:
+                self.chat_log.info("NOTICE: Not using any filter keys")
 
             if len(filter_dict) == 1:
                 metadata_filter = {}
@@ -376,14 +482,17 @@ class ConveresationManager:
                 where = None
 
             k = int(getenv("VECTOR_K"))
-            self.chat_log.info(f"There are {self.retriever._collection.count()} documents in the collection")
+            self.chat_log.info(f"There are {retriever._collection.count()} documents in the collection")
             self.chat_log.info(f"Filter {where}")
 
-            docs = self.retriever.similarity_search_with_score(query=message, k=k, filter=where)
+            docs = retriever.similarity_search_with_score(query=message, k=k, filter=where)
             for answer in docs:
                 vector_context = vector_context + answer[0].page_content
 
-            self.chat_log.info(vector_context)
+            self.chat_log.debug(f"Vector context for {vector_type}: {vector_context}")
+            return vector_context
+        else:
+            self.chat_log.debug(f"Retriever was None for {vector_type}")
             return vector_context
 
     def get_history(self) -> str:
@@ -403,9 +512,15 @@ class ConveresationManager:
 
     async def ask_question_test(self, message: str):
         self.chat_log.info(message)
-        vector_context = self.get_vector_context(message)
+        mes_context = self.get_vector(message, "mes")
+        vector_context = self.get_vector(message, "context")
         history = self.get_history()
-        query_input = {"input": message, "history": history, "vector_context": vector_context}
+        query_input = {
+            "input": message,
+            "history": history,
+            "mes_example": mes_context,
+            "vector_context": vector_context,
+        }
         self.chat_log.info(f"query input: {query_input}")
 
         self.conversation_chain_test = self.prompt | self.llm_model
@@ -414,17 +529,24 @@ class ConveresationManager:
             query_input,
         ):
             chunks.append(chunk)
-            print(chunk, flush=True)
+            print(chunk, flush=True, end="")
 
     async def ask_question(self, message: cl.Message) -> cl.Message:
         self.chat_log.info(message.content)
-        vector_context = self.get_vector_context(message.content)
+        mes_context = self.get_vector(message.content, "mes")
+        vector_context = self.get_vector(message.content, "context")
         history = self.get_history()
-        query_input = {"input": message.content, "history": history, "vector_context": vector_context}
+        query_input = {
+            "input": message.content,
+            "history": history,
+            "mes_example": mes_context,
+            "vector_context": vector_context,
+        }
         self.chat_log.info(f"query input: {query_input}")
 
         self.conversation_chain_test = self.prompt | self.llm_model
         result = cl.Message(content="")
+
         async for chunk in self.conversation_chain_test.astream(
             query_input,
             config=RunnableConfig(callbacks=[cl.LangchainCallbackHandler()]),
@@ -433,11 +555,51 @@ class ConveresationManager:
         self.update_history(message.content, result.content)
         return result
 
-    def get_character_name(self):
+    def get_character_name(self) -> str:
         return self.character_name
 
-    def get_use_avatar_image(self):
+    def get_use_avatar_image(self) -> bool:
         return self.use_avatar_image
 
-    def get_avatar_image_path(self):
+    def get_avatar_image_path(self) -> str:
         return self.avatar_image
+
+    def update_settings(self, settings: dict[str, str]):
+        self.chat_log.info("Updating settings")
+        self.chat_log.debug(
+            f"Current Settings: {self.prompt_template}, {self.mes_collection_name} and {self.context_collection_name}"
+        )
+
+        if settings["prompt_template_options"] not in ("none", self.prompt_template):
+            self.change_prompt(settings["prompt_template_options"])
+            self.chat_log.info(f"Prompte template changed to: {settings['prompt_template_options']}")
+
+        if settings["mex_collection"] not in ("none", self.mes_collection_name):
+            self.all_mes_keys = self.parse_keys(settings["mex_collection"])
+            self.mes_retriever = self.instantiate_retriever(settings["mex_collection"])
+            self.chat_log.info(f"Mex collection changed to: {settings['mex_collection']}")
+
+        if settings["context_collection"] not in ("none", self.context_collection_name):
+            self.all_context_keys = self.parse_keys(settings["context_collection"])
+            self.context_retriever = self.instantiate_retriever(settings["context_collection"])
+            self.chat_log.info(f"Context collection changed to: {settings['context_collection']}")
+
+    def get_prompt_templates(self) -> list[str]:
+        return self.collections_config["prompt_template_options"]
+
+    def get_prompt_template_index(self) -> int:
+        return self.collections_config["prompt_template_options"].index(
+            self.collections_config["prompt_template_default"]
+        )
+
+    def get_context_collections(self) -> list[str]:
+        return self.collections_config["context_options"]
+
+    def get_context_index(self) -> int:
+        return self.collections_config["context_options"].index(self.collections_config["context_default"])
+
+    def get_mes_collections(self) -> list[str]:
+        return self.collections_config["mex_options"]
+
+    def get_mes_index(self) -> int:
+        return self.collections_config["mex_options"].index(self.collections_config["mex_default"])

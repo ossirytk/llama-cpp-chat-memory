@@ -10,7 +10,7 @@ python -m spacy download en_core_web_lg
 ```
 
 You might want to play with the chunk size and overlap based on your text documents<BR>
-The example documents include a txt file for skynet embeddings and json lorebooks for [Hogwarts](https://chub.ai/lorebooks/deadgirlz/hogwarts-legacy-lore-b819ccba) and [Honkai Impact](https://chub.ai/lorebooks/Zareh-Haadris/lorebook-honkai-impact-b1fcfc23)<BR>
+The example documents include a txt file for 'Skynet' and 'Shodan'<BR>
 The supported lorebook formats are chub inferred AgnAIstic and SillyTavern original source.
 For pdf files there is a pdf file of short stories from Fyodor Dostoyevsky included The source is Internet Archive, the copy is in public domain. The pdf text quality is quite poor thought, so I recommend getting another file.
 

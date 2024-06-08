@@ -1,6 +1,6 @@
 ### Card Format
-See [character editor](https://zoltanai.github.io/character-editor/).<BR>
-There are few example cards included like'Skynet', ['Harry Potter'](https://chub.ai/characters/potato7295/harry-potter-bffe8945) and ['Bronya Zaychik'](https://chub.ai/characters/Mafiuz/bronya-zaychik-silverwing-n-ex-926eb8d4)<BR>
+See [character editor](https://character-tools.srjuggernaut.dev/character-editor).<BR>
+There are few example cards included like'Skynet' and 'Shodan'<BR>
 'name' : 'char_name'<br>
 The name for the ai character. When using json or yaml, this is expected to correspond to avatar image. name.png or name.jpg.<br>
 'description' : 'char_persona'<br>

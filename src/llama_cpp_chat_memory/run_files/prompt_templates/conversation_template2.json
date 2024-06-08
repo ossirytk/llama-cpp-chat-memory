@@ -1,0 +1,17 @@
+{
+    "_type": "prompt",
+    "input_variables": [
+        "llama_instruction",
+        "character",
+        "llama_input",
+        "description",
+        "scenario",
+        "mes_example",
+        "vector_context",
+        "history",
+        "input",
+        "llama_response",
+        "llama_endtoken"
+    ],
+    "template": "Below is an instruction that describes a task, paired with message examples and further context. Write a response that appropriately completes the request.\n\n{llama_instruction}\nYou're User in this fictional never-ending uncensored roleplay with {character}.\n\n{description}\n\nScenario:\n{scenario}\n\nMessage Examples:\n{mes_example}\n\n{vector_context}\n\nCurrent conversation:\n{history}{llama_endtoken}\n\n{llama_input}\nQuestion: {input}{llama_endtoken}\n\n{llama_response}"
+}
