@@ -33,8 +33,6 @@ NER_LOGGER.setLevel(logging.INFO)
 
 load_dotenv(find_dotenv())
 
-SPACY_CHARACTER_LIMIT = 1000000
-
 
 def split_text(
     text: str,

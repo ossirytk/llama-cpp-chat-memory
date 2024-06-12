@@ -4,160 +4,13 @@ import argparse
 import glob
 import logging
 import os
-import re
-from collections.abc import Iterable
 
 from dotenv import find_dotenv, load_dotenv
+from pandas import DataFrame
 from spacy_conll import init_parser
 
 logging.basicConfig(format="%(message)s", encoding="utf-8", level=logging.DEBUG)
 load_dotenv(find_dotenv())
-
-SPACY_CHARACTER_LIMIT = 1000000
-
-# stanza.download("en")
-
-
-def split_text(
-    text: str,
-    chunk_size: int,
-    chunk_overlap: int,
-) -> list[str]:
-    separators = ["\n\n", "\n", " ", ""]
-
-    """Split incoming text and return chunks."""
-    final_chunks = []
-    # Get appropriate separator to use
-    separator = separators[-1]
-    new_separators = []
-    for i, _s in enumerate(separators):
-        _separator = re.escape(_s)
-        if _s == "":
-            separator = _s
-            break
-        if re.search(_separator, text):
-            separator = _s
-            new_separators = separators[i + 1 :]
-            break
-
-    _separator = re.escape(separator)
-    splits = split_text_with_regex(text, _separator)
-
-    # Now go merging things, recursively splitting longer texts.
-    _good_splits = []
-    _separator = ""
-    for s in splits:
-        if _good_splits:
-            merged_text = merge_splits(_good_splits, _separator)
-            final_chunks.extend(merged_text)
-            _good_splits = []
-        if not new_separators:
-            final_chunks.append(s)
-        else:
-            other_info = _split_text(s, new_separators, chunk_size, chunk_overlap)
-            final_chunks.extend(other_info)
-    if _good_splits:
-        merged_text = merge_splits(_good_splits, _separator)
-        final_chunks.extend(merged_text)
-    return final_chunks
-
-
-def _split_text(text: str, separators: list[str], chunk_size: int, chunk_overlap: int) -> list[str]:
-    """Split incoming text and return chunks."""
-    final_chunks = []
-    # Get appropriate separator to use
-    separator = separators[-1]
-    new_separators = []
-    for i, _s in enumerate(separators):
-        _separator = re.escape(_s)
-        if _s == "":
-            separator = _s
-            break
-        if re.search(_separator, text):
-            separator = _s
-            new_separators = separators[i + 1 :]
-            break
-
-    _separator = re.escape(separator)
-    splits = split_text_with_regex(text, _separator)
-
-    # Now go merging things, recursively splitting longer texts.
-    _good_splits = []
-    _separator = separator
-    for s in splits:
-        if len(s) < chunk_size:
-            _good_splits.append(s)
-        else:
-            if _good_splits:
-                merged_text = merge_splits(_good_splits, _separator, chunk_size, chunk_overlap)
-                final_chunks.extend(merged_text)
-                _good_splits = []
-            if not new_separators:
-                final_chunks.append(s)
-            else:
-                other_info = _split_text(s, new_separators, chunk_size, chunk_overlap)
-                final_chunks.extend(other_info)
-    if _good_splits:
-        merged_text = merge_splits(_good_splits, _separator, chunk_size, chunk_overlap)
-        final_chunks.extend(merged_text)
-    return final_chunks
-
-
-def split_text_with_regex(text: str, separator: str) -> list[str]:
-    # Now that we have the separator, split the text
-    if separator:
-        # The parentheses in the pattern keep the delimiters in the result.
-        _splits = re.split(f"({separator})", text)
-        splits = [_splits[i] + _splits[i + 1] for i in range(1, len(_splits), 2)]
-        if len(_splits) % 2 == 0:
-            splits += _splits[-1:]
-        splits = [_splits[0], *splits]
-    else:
-        splits = list(text)
-    return [s for s in splits if s != ""]
-
-
-def merge_splits(splits: Iterable[str], separator: str, chunk_size, chunk_overlap) -> list[str]:
-    # We now want to combine these smaller pieces into medium size
-    # chunks to send to the LLM.
-    separator_len = len(separator)
-
-    docs = []
-    current_doc: list[str] = []
-    total = 0
-    for d in splits:
-        _len = len(d)
-        if total + _len + (separator_len if len(current_doc) > 0 else 0) > chunk_size:
-            if total > chunk_size:
-                logging.warning(f"Created a chunk of size {total}, which is longer than the specified {chunk_size}")
-            if len(current_doc) > 0:
-                doc = join_docs(current_doc, separator)
-                if doc is not None:
-                    docs.append(doc)
-                # Keep on popping if:
-                # - we have a larger chunk than in the chunk overlap
-                # - or if we still have any chunks and the length is long
-                while total > chunk_overlap or (
-                    total + _len + (separator_len if len(current_doc) > 0 else 0) > chunk_size and total > 0
-                ):
-                    total -= len(current_doc[0]) + (separator_len if len(current_doc) > 1 else 0)
-                    current_doc = current_doc[1:]
-        current_doc.append(d)
-        total += _len + (separator_len if len(current_doc) > 1 else 0)
-    doc = join_docs(current_doc, separator)
-    if doc is not None:
-        docs.append(doc)
-    return docs
-
-
-def join_docs(docs: list[str], separator: str) -> str | None:
-    text = separator.join(docs)
-    text = text.strip()
-
-    if text == "":
-        return None
-    else:
-        return text
 
 
 def main(
@@ -172,25 +25,25 @@ def main(
 ) -> None:
     documents_pattern = os.path.join(documents_directory, "*.txt")
     documents_paths_txt = glob.glob(documents_pattern)
-    text_corpus = ""
+    corpus = ""
 
     for txt_document in documents_paths_txt:
         logging.debug(f"Reading: {txt_document}")
         with open(txt_document, encoding="utf-8") as f:
             content = f.read()
-            text_corpus = text_corpus + content
+            corpus = corpus + content
 
-    logging.debug("Cleaning Corpus")
+    nlp = init_parser("en", "stanza", is_tokenized=True, parser_opts={"download_method": None})
 
-    # the max corpus size is 1000000 characters so need to split the documents
-    parts = split_text(text_corpus, chunk_size, chunk_overlap)
+    # df = None
+    doc = nlp(corpus)
+    df: DataFrame = doc._.conll_pd
+    logging.info(df.head())
+    key_storage_path = os.path.join(key_storage, "conll_test.csv")
 
-    nlp = init_parser("en", "stanza", is_tokenized=True)
-
-    df = None
-    for corpus in parts:
-        doc = nlp(corpus)
-        logging.info(doc._.conll_pd.head())
+    csv_key_file = df.to_csv()
+    with open(key_storage_path, mode="w", encoding="utf-8") as key_file:
+        key_file.write(csv_key_file)
 
 
 if __name__ == "__main__":
