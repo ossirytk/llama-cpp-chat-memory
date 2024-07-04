@@ -18,26 +18,27 @@ classifiers = [
   "Programming Language :: Python :: 3.11",
 ]
 dependencies = [
-"langchain==0.2.0",
-"langchain-community==0.2.0",
-"chainlit==1.1.101",
-"llama-cpp-python==0.2.75",
-"Pillow==10.3.0",
+"langchain==0.2.6",
+"langchain-community==0.2.6",
+"chainlit==1.1.306",
+"llama-cpp-python==0.2.81",
+"Pillow==10.4.0",
 "PyYAML==6.0.1",
 "toml==0.10.2",
-"chromadb==0.5.0",
+"chromadb==0.5.3",
 "pypdf==4.2.0",
-"sentence-transformers==2.7.0",
-"simsimd==4.3.1",
+"sentence-transformers==3.0.1",
+"simsimd==4.4.0",
 "beautifulsoup4==4.12.3",
-"playwright==1.44.0",
-"pydantic==2.7.1",
+"playwright==1.45.0",
+"pydantic==2.8.2",
 "cytoolz==0.12.3",
-"spacy==3.7.4",
+"spacy==3.7.5",
 "pandas==2.2.2",
 "pyarrow==16.1.0",
-"trafilatura==1.9.0",
+"trafilatura==1.11.0",
 "flask==3.0.3",
+"nltk==3.8.1"
 ]
 
 [project.urls]
@@ -76,12 +77,17 @@ dependencies = [
   "mypy>=1.0.0",
   "ruff>=0.0.243",
 ]
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/llama_cpp_chat_memory"]
+
 [tool.hatch.envs.lint.scripts]
 typing = "mypy --install-types --non-interactive {args:src/llama_cpp_chat_memory tests}"
 style = [
   "ruff {args:.}",
   "black --check --diff {args:.}",
 ]
+
 fmt = [
   "black {args:.}",
   "ruff --fix {args:.}",
