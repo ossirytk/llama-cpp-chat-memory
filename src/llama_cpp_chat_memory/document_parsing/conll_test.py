@@ -39,9 +39,9 @@ def main(
     doc = nlp(corpus)
     df: DataFrame = doc._.conll_pd
     logging.info(df.head())
-    key_storage_path = os.path.join(key_storage, "conll_test.csv")
+    key_storage_path = os.path.join(key_storage, "conll_test.json")
 
-    csv_key_file = df.to_csv()
+    csv_key_file = df.to_json()
     with open(key_storage_path, mode="w", encoding="utf-8") as key_file:
         key_file.write(csv_key_file)
 
