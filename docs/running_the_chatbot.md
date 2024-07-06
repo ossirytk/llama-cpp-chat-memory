@@ -23,3 +23,5 @@ hatch shell chat
 cd .\src\llama_cpp_chat_memory\
 flask --app flask_web_server run
 ```
+### Avatar Images
+Avatar images need to be stored in the .\public\avatars folder. Make sure that the folder exists. Character cards in png format will have a copy of the image data saved in the avatars folder automatically. If you copy an image manually, make sure that the filename matches the name is the character card and replace the whitespace in the name with underscores.

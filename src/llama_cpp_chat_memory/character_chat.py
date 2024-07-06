@@ -36,13 +36,6 @@ async def start():
             ),
         ]
     ).send()
-    # Set the chatbot icon to character icon
-    if conversation_manager.get_use_avatar_image():
-        await cl.Avatar(
-            name=conversation_manager.get_character_name(),
-            path=conversation_manager.get_avatar_image_path(),
-            size="large",
-        ).send()
 
 
 @cl.on_settings_update

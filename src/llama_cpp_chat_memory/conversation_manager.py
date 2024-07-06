@@ -4,7 +4,7 @@ import json
 import logging
 import re
 from collections import deque
-from os import getenv, makedirs, mkdir
+from os import getcwd, getenv, makedirs, mkdir
 from os.path import dirname, exists, join, realpath, splitext
 
 import chainlit as cl
@@ -51,7 +51,6 @@ class ConveresationManager:
         # TODO Test Builder
 
         # Character card details
-        self.card_avatar = None
         self.character_name: str = ""
         self.description: str = ""
         self.scenario: str = ""
@@ -73,8 +72,6 @@ class ConveresationManager:
         self.all_context_keys = self.parse_keys("context_default")
         self.question_refining_prompt = self.parse_question_refining_metadata_prompt()
         self.prompt = self.parse_prompt()
-        self.avatar_image = self.get_avatar_image()
-        self.use_avatar_image = exists(self.avatar_image)
         self.embedder = self.instantiate_embeddings()
         self.mes_retriever = self.instantiate_retriever("mex_default")
         self.context_retriever = self.instantiate_retriever("context_default")
@@ -95,7 +92,6 @@ class ConveresationManager:
         if exists(collection_config_path):
             with open(collection_config_path) as key_file:
                 content = key_file.read()
-            # TODO Should throw some fancy error here if this does not exist
             config_json = json.loads(content)
         return config_json
 
@@ -110,6 +106,7 @@ class ConveresationManager:
         all_keys = None
         if collection_name != "none":
             key_storage = getenv("KEY_STORAGE_DIRECTORY")
+            makedirs(key_storage, exist_ok=True)
             key_storage_path = join(key_storage, collection_name + ".json")
             if exists(key_storage_path):
                 with open(key_storage_path) as key_file:
@@ -128,6 +125,7 @@ class ConveresationManager:
     def parse_question_refining_metadata_prompt(self) -> BasePromptTemplate:
         # TODO RUN CONFIG PROMPT TEMPLATE
         self.prompt_template_dir = getenv("PROMPT_TEMPLATE_DIRECTORY")
+        makedirs(self.prompt_template_dir, exist_ok=True)
         prompt_metadata_template_name = "question_refining_metadata_template.json"
         metadata_prompt_template_path = join(self.prompt_template_dir, prompt_metadata_template_name)
         metadata_prompt = load_prompt(metadata_prompt_template_path)
@@ -161,6 +159,7 @@ class ConveresationManager:
         script_root_path = dirname(realpath(__file__))
         help_file_path = join(script_root_path, "chainlit.md")
         prompt_dir = getenv("CHARACTER_CARD_DIR")
+        makedirs(prompt_dir, exist_ok=True)
         prompt_name = getenv("CHARACTER_CARD")
         prompt_source = join(prompt_dir, prompt_name)
 
@@ -194,9 +193,12 @@ class ConveresationManager:
                     card = json.loads(decoded)
                     if is_v2 and "data" in card:
                         card = card["data"]
-                char_name = card["name"] if "name" in card else card["char_name"]
-                temp_folder_path = join(script_root_path, "run_files", "temp")
-                copy_image_filename = join(temp_folder_path, char_name + ".png")
+                char_name: str = card["name"] if "name" in card else card["char_name"]
+                cwd = getcwd()
+                temp_folder_path = join(cwd, "public", "avatars")
+                makedirs(temp_folder_path, exist_ok=True)
+                clean_name = char_name.lower().replace(" ", "_")
+                copy_image_filename = join(temp_folder_path, clean_name + ".png")
                 if not exists(copy_image_filename):
                     if not exists(temp_folder_path):
                         mkdir(temp_folder_path)
@@ -205,10 +207,6 @@ class ConveresationManager:
                     image2.putdata(data)
                     # Save a card image without metadata into temp
                     image2.save(copy_image_filename)
-                    # Set the card image without metadata as avatar image
-                    self.card_avatar = copy_image_filename
-                else:
-                    self.card_avatar = copy_image_filename
 
         prompt = load_prompt(prompt_template_path)
 
@@ -311,20 +309,6 @@ class ConveresationManager:
         )
         self.prompt_template = new_template
 
-    def get_avatar_image(self) -> str:
-        if self.card_avatar is None:
-            prompt_dir = getenv("CHARACTER_CARD_DIR")
-            prompt_name = getenv("CHARACTER_CARD")
-            prompt_source = join(prompt_dir, prompt_name)
-            base = splitext(prompt_source)[0]
-            if exists(base + ".png"):
-                return base + ".png"
-            elif exists(base + ".jpg"):
-                return base + ".jpg"
-            return ""
-        else:
-            return self.card_avatar
-
     def instantiate_embeddings(self) -> Embeddings:
         self.mes_collection_name = self.collections_config["mex_default"]
         self.context_collection_name = self.collections_config["context_default"]
@@ -332,6 +316,7 @@ class ConveresationManager:
             return None
 
         model_dir = getenv("MODEL_DIR")
+        makedirs(model_dir, exist_ok=True)
         model = getenv("MODEL")
         model_source = join(model_dir, model)
         embeddings_model = getenv("EMBEDDINGS_MODEL")
@@ -379,14 +364,15 @@ class ConveresationManager:
             self.chat_log.info("Embedder is None or collection name is none")
             return None
 
-        client = chromadb.PersistentClient(
-            path=getenv("PERSIST_DIRECTORY"), settings=Settings(anonymized_telemetry=False)
-        )
+        persist_directory = getenv("PERSIST_DIRECTORY")
+        makedirs(persist_directory, exist_ok=True)
+
+        client = chromadb.PersistentClient(path=persist_directory, settings=Settings(anonymized_telemetry=False))
 
         db = Chroma(
             client=client,
             collection_name=collection_name,
-            persist_directory=getenv("PERSIST_DIRECTORY"),
+            persist_directory=persist_directory,
             embedding_function=self.embedder,
         )
 
@@ -394,6 +380,7 @@ class ConveresationManager:
 
     def instantiate_llm(self) -> LlamaCpp:
         model_dir = getenv("MODEL_DIR")
+        makedirs(model_dir, exist_ok=True)
         model = getenv("MODEL")
         model_source = join(model_dir, model)
 
@@ -557,12 +544,6 @@ class ConveresationManager:
 
     def get_character_name(self) -> str:
         return self.character_name
-
-    def get_use_avatar_image(self) -> bool:
-        return self.use_avatar_image
-
-    def get_avatar_image_path(self) -> str:
-        return self.avatar_image
 
     def update_settings(self, settings: dict[str, str]):
         self.chat_log.info("Updating settings")
