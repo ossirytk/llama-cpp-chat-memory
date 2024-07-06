@@ -5,6 +5,7 @@ dist/
 site/
 __pycache__/
 src/llama_cpp_chat_memory/public/avatars/
+src/llama_cpp_chat_memory/test/
 src/llama_cpp_chat_memory/run_files/chroma_storage/
 src/llama_cpp_chat_memory/run_files/character_storage/
 src/llama_cpp_chat_memory/run_files/key_storage/

@@ -18,15 +18,17 @@ from langchain.schema.runnable.config import RunnableConfig
 from langchain_community.embeddings import HuggingFaceEmbeddings, LlamaCppEmbeddings
 from langchain_community.llms.llamacpp import LlamaCpp
 from langchain_community.vectorstores import Chroma
+from langchain_core.documents.base import Document
 from langchain_core.embeddings import Embeddings
 from langchain_core.output_parsers import StrOutputParser
 from langchain_core.prompts import BasePromptTemplate, load_prompt
 from nltk import regexp_tokenize
 from PIL import Image
+from rank_bm25 import BM25Okapi
 
 
 class ConveresationManager:
-    def __init__(self):
+    def __init__(self, **kwargs):
         # Write logs to chat.log file. This is easier to read
         # Requires that we empty the chainlit log handlers first
         # If you want chainlit debug logs, you might need to disable this
@@ -48,43 +50,70 @@ class ConveresationManager:
 
         load_dotenv(find_dotenv())
 
-        # TODO Test Builder
+        if "test" not in kwargs:
+            # Character card details
+            self.character_name: str = ""
+            self.description: str = ""
+            self.scenario: str = ""
+            self.mes_example: str = ""
+            self.llama_input: str = ""
+            self.llama_instruction: str = ""
+            self.llama_response: str = ""
+            self.llama_endtoken: str = ""
 
-        # Character card details
-        self.character_name: str = ""
-        self.description: str = ""
-        self.scenario: str = ""
-        self.mes_example: str = ""
-        self.llama_input: str = ""
-        self.llama_instruction: str = ""
-        self.llama_response: str = ""
-        self.llama_endtoken: str = ""
+            # Collections and template
+            self.prompt_template_dir: str = ""
+            self.mes_collection_name: str = ""
+            self.context_collection_name: str = ""
+            self.prompt_template: str = ""
 
-        # Collections and template
-        self.prompt_template_dir: str = ""
-        self.mes_collection_name: str = ""
-        self.context_collection_name: str = ""
-        self.prompt_template: str = ""
+            # Init things
+            self.collections_config = self.parse_collections_config()
+            self.all_mes_keys = self.parse_keys("mex_default")
+            self.all_context_keys = self.parse_keys("context_default")
+            self.question_refining_prompt = self.parse_question_refining_metadata_prompt()
+            self.prompt = self.parse_prompt()
+            self.embedder = self.instantiate_embeddings()
+            self.mes_retriever = self.instantiate_retriever("mex_default")
+            self.context_retriever = self.instantiate_retriever("context_default")
+            self.llm_model = self.instantiate_llm()
+            self.historylen = int(getenv("BUFFER_K"))
+            self.vector_sort_type = getenv("VECTOR_SORT_TYPE")
+            self.user_message_history: deque[str] = deque(maxlen=self.historylen)
+            self.ai_message_history: deque[str] = deque(maxlen=self.historylen)
+            output_parser = StrOutputParser()
 
-        # Init things
-        self.collections_config = self.parse_collections_config()
-        self.all_mes_keys = self.parse_keys("mex_default")
-        self.all_context_keys = self.parse_keys("context_default")
-        self.question_refining_prompt = self.parse_question_refining_metadata_prompt()
-        self.prompt = self.parse_prompt()
-        self.embedder = self.instantiate_embeddings()
-        self.mes_retriever = self.instantiate_retriever("mex_default")
-        self.context_retriever = self.instantiate_retriever("context_default")
-        self.llm_model = self.instantiate_llm()
-        self.historylen = int(getenv("BUFFER_K"))
-        self.user_message_history: deque[str] = deque(maxlen=self.historylen)
-        self.ai_message_history: deque[str] = deque(maxlen=self.historylen)
-        output_parser = StrOutputParser()
+            # Initial chains
+            self.conversation_chain = self.prompt | self.llm_model
+            self.conversation_chain_test = self.prompt | self.llm_model | output_parser
+            self.refine_chain = self.question_refining_prompt | self.llm_model | output_parser
+        else:
+            # TODO Improve these test settings
+            # Character card details
+            self.character_name: str = ""
+            self.description: str = ""
+            self.scenario: str = ""
+            self.mes_example: str = ""
+            self.llama_input: str = ""
+            self.llama_instruction: str = ""
+            self.llama_response: str = ""
+            self.llama_endtoken: str = ""
 
-        # Initial chains
-        self.conversation_chain = self.prompt | self.llm_model
-        self.conversation_chain_test = self.prompt | self.llm_model | output_parser
-        self.refine_chain = self.question_refining_prompt | self.llm_model | output_parser
+            # Collections and template
+            self.prompt_template_dir: str = ""
+            self.mes_collection_name: str = ""
+            self.context_collection_name: str = ""
+            self.prompt_template: str = ""
+
+            # Init things
+            self.collections_config = self.parse_collections_config()
+            self.all_mes_keys = self.parse_keys("mex_default")
+            self.all_context_keys = self.parse_keys("context_default")
+            self.prompt = self.parse_prompt()
+            self.embedder = self.instantiate_embeddings()
+            self.mes_retriever = self.instantiate_retriever("mex_default")
+            self.context_retriever = self.instantiate_retriever("context_default")
+            self.vector_sort_type = getenv("VECTOR_SORT_TYPE")
 
     def parse_collections_config(self):
         collection_config_path = getenv("COLLECTION_CONFIG")
@@ -156,6 +185,8 @@ class ConveresationManager:
 
     def parse_prompt(self) -> BasePromptTemplate:
         # Currently the chat welcome message is read from chainlit.md file.
+        self.prompt_template_dir = getenv("PROMPT_TEMPLATE_DIRECTORY")
+        makedirs(self.prompt_template_dir, exist_ok=True)
         script_root_path = dirname(realpath(__file__))
         help_file_path = join(script_root_path, "chainlit.md")
         prompt_dir = getenv("CHARACTER_CARD_DIR")
@@ -414,28 +445,46 @@ class ConveresationManager:
         )
         return llm_model_init
 
-    def get_vector(self, message: str, vector_type: str) -> str:
-        retriever = None
-        all_keys = None
-        if vector_type == "mes":
-            self.chat_log.info("Vector type: mes")
-            retriever = self.mes_retriever
-            all_keys = self.all_mes_keys
-        elif vector_type == "context":
-            self.chat_log.info("Vector type: Context")
-            retriever = self.context_retriever
-            all_keys = self.all_context_keys
-        else:
-            self.chat_log.info("Vector type: None")
-            retriever = None
+    def calculate_fusion_rank(self, query: str, docs: list[Document]) -> pd.DataFrame:
+        text_list = []
+        vector_sort_type = self.vector_sort_type
 
-        vector_context = ""
-        if retriever:
-            # TODO rework this. The question refining prompt can have poor accuracy
-            # Use ner?
-            metadata_result = self.refine_chain.invoke(message)
+        for document, _distance in docs:
+            text_list.append(document.page_content)
 
-            self.chat_log.info(f"Query {message}")
+        tokenized_corpus = [doc.split(" ") for doc in text_list]
+        bm25 = BM25Okapi(tokenized_corpus)
+
+        tokenized_query = query.split(" ")
+        doc_scores = bm25.get_scores(tokenized_query)
+        sorted_doc_scores = sorted(doc_scores, reverse=True)
+
+        fusion_scores = []
+        vector_distance_scores = []
+        bm25_scores = []
+        for idx, bm25_value in enumerate(doc_scores):
+            vector_distance_rank = idx + 1
+            bm_25_rank = sorted_doc_scores.index(bm25_value) + 1
+            fusion_rank = (1.0 / (0.6 + vector_distance_rank)) + (1.0 / (0.6 + bm_25_rank))
+            vector_distance_scores.append(vector_distance_rank)
+            bm25_scores.append(bm_25_rank)
+            fusion_scores.append(fusion_rank)
+
+        df = pd.DataFrame(
+            {
+                "content": text_list,
+                "vector_distance_rank": vector_distance_scores,
+                "bm25_rank": bm25_scores,
+                "fusion_rank": fusion_scores,
+            }
+        )
+        # Default order is vector distance
+        if vector_sort_type in ["bm25_rank", "fusion_rank"]:
+            df = df.sort_values(vector_sort_type, ascending=False)
+        return df
+
+    def get_metadata_filter(self, metadata_result: str, all_keys: str, retriever: Chroma):
+        if retriever is not None:
             self.chat_log.info(f"Query metadata {metadata_result}")
             # Currently Chroma has no "like" implementation so this is a case sensitive hack with uuids
             # There is also an issue when filter has only one item since "in" expects multiple items
@@ -467,20 +516,18 @@ class ConveresationManager:
                 where = {"$or": metadata_filter_list}
             else:
                 where = None
+            return where
 
-            k = int(getenv("VECTOR_K"))
+    def get_vector(
+        self, message: str, retriever: Chroma, metadata_filter: str, k_size: int
+    ) -> list[tuple[Document, float]]:
+        if retriever is not None:
             self.chat_log.info(f"There are {retriever._collection.count()} documents in the collection")
-            self.chat_log.info(f"Filter {where}")
+            self.chat_log.info(f"Filter {metadata_filter}")
 
-            docs = retriever.similarity_search_with_score(query=message, k=k, filter=where)
-            for answer in docs:
-                vector_context = vector_context + answer[0].page_content
-
-            self.chat_log.debug(f"Vector context for {vector_type}: {vector_context}")
-            return vector_context
-        else:
-            self.chat_log.debug(f"Retriever was None for {vector_type}")
-            return vector_context
+            k_buffer = k_size + 4
+            docs = retriever.similarity_search_with_score(query=message, k=k_buffer, filter=metadata_filter)
+            return docs
 
     def get_history(self) -> str:
         message_history = ""
@@ -499,8 +546,34 @@ class ConveresationManager:
 
     async def ask_question_test(self, message: str):
         self.chat_log.info(message)
-        mes_context = self.get_vector(message, "mes")
-        vector_context = self.get_vector(message, "context")
+        vector_k = int(getenv("VECTOR_K"))
+
+        # TODO rework this. The question refining prompt can have poor accuracy
+        # Use ner?
+        # Move to another method
+        self.chat_log.info(f"Query {message}")
+        metadata_result = self.refine_chain.invoke(message)
+
+        mes_filter = self.get_metadata_filter(metadata_result, self.all_mes_keys, self.mes_retriever)
+        mes_docs = self.get_vector(message, self.mes_retriever, mes_filter, vector_k)
+        mes_context = ""
+        if mes_docs is not None and len(mes_docs) > 1:
+            mes_df: pd.DataFrame = self.calculate_fusion_rank(message, mes_docs)
+            mes_df = mes_df.iloc[0:vector_k]
+            mes_context = "\n".join(mes_df["content"].tolist())
+        elif mes_docs is not None and len(mes_docs) == 1:
+            mes_context = mes_docs[0].page_content
+
+        context_filter = self.get_metadata_filter(metadata_result, self.all_context_keys, self.context_retriever)
+        vector_docs = self.get_vector(message, self.context_retriever, context_filter, vector_k)
+        vector_context = ""
+        if vector_docs is not None and len(vector_docs) > 1:
+            vector_context_df: pd.DataFrame = self.calculate_fusion_rank(message, vector_docs)
+            vector_context_df = vector_context_df.iloc[0:vector_k]
+            vector_context = "\n".join(vector_context_df["content"].tolist())
+        elif vector_docs is not None and len(vector_docs) == 1:
+            vector_context = vector_docs[0].page_content
+
         history = self.get_history()
         query_input = {
             "input": message,
@@ -520,8 +593,34 @@ class ConveresationManager:
 
     async def ask_question(self, message: cl.Message) -> cl.Message:
         self.chat_log.info(message.content)
-        mes_context = self.get_vector(message.content, "mes")
-        vector_context = self.get_vector(message.content, "context")
+        vector_k = int(getenv("VECTOR_K"))
+
+        # TODO rework this. The question refining prompt can have poor accuracy
+        # Use ner?
+        # Move to another method
+        self.chat_log.info(f"Query {message}")
+        metadata_result = self.refine_chain.invoke(message)
+
+        mes_filter = self.get_metadata_filter(metadata_result, self.all_mes_keys, self.mes_retriever)
+        mes_docs = self.get_vector(message.content, self.mes_retriever, mes_filter, vector_k)
+        mes_context = ""
+        if mes_docs is not None and len(mes_docs) > 1:
+            mes_df: pd.DataFrame = self.calculate_fusion_rank(message.content, mes_docs)
+            mes_df = mes_df.iloc[0:vector_k]
+            mes_context = "\n".join(mes_df["content"].tolist())
+        elif mes_docs is not None and len(mes_docs) == 1:
+            mes_context = mes_docs[0].page_content
+
+        context_filter = self.get_metadata_filter(metadata_result, self.all_context_keys, self.context_retriever)
+        vector_docs = self.get_vector(message.content, self.context_retriever, context_filter, vector_k)
+        vector_context = ""
+        if vector_docs is not None and len(vector_docs) > 1:
+            vector_context_df: pd.DataFrame = self.calculate_fusion_rank(message.content, vector_docs)
+            vector_context_df = vector_context_df.iloc[0:vector_k]
+            vector_context = "\n".join(vector_context_df["content"].tolist())
+        elif vector_docs is not None and len(vector_docs) == 1:
+            vector_context = vector_docs[0].page_content
+
         history = self.get_history()
         query_input = {
             "input": message.content,
