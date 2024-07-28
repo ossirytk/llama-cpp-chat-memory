@@ -6,7 +6,7 @@ from conversation_manager import ConveresationManager
 conversation_manager = ConveresationManager()
 
 
-async def get_answer(message):
+async def get_answer(message: str):
     await conversation_manager.ask_question_test(message)
 
 
