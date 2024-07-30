@@ -1,0 +1,22 @@
+{
+    "ngs": [
+        "PROPN",
+        "NOUN",
+        "ADJ"
+    ],
+    "entities": [
+        "PRODUCT",
+        "EVENT",
+        "FAC",
+        "NORP",
+        "PERSON",
+        "ORG",
+        "GPE",
+        "LOC",
+        "DATE",
+        "TIME",
+        "WORK_OF_ART"
+    ],
+    "noun_chunks": 1,
+    "extract_type": "orth"
+}

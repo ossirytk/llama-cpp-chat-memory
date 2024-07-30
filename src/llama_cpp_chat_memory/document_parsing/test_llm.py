@@ -6,14 +6,10 @@ from conversation_manager import ConveresationManager
 conversation_manager = ConveresationManager()
 
 
-async def get_answer(message: str):
-    await conversation_manager.ask_question_test(message)
-
-
 async def main(
     query: str,
 ) -> None:
-    await get_answer(query)
+    await conversation_manager.ask_question_test(query)
 
 
 if __name__ == "__main__":
