@@ -173,6 +173,14 @@
 <td>Url to the custom css file to be used by the application.</td>
 </tr>
 <tr>
+<td>REFINE_MODEL</td>
+<td>Spacy model used for metadata ner parsing</td>
+</tr>
+<tr>
+<td>REFINE_CONFIG</td>
+<td>Ner config file used for metadata ner parsing</td>
+</tr>
+<tr>
 <td>VECTOR_SORT_TYPE</td>
 <td>Vector searach sort type distance/bm25/fusionrank</td>
 </tr>
@@ -209,10 +217,6 @@
 <td>Load the whole model into ram. Default False</td>
 </tr>
 <tr>
-<td>USE_MMAP</td>
-<td>Allows only the necessary parts to be loaded into memory and offloading the rest. Default false</td>
-</tr>
-<tr>
 <td>TEMPERATURE</td>
 <td>Adjust the randomness of the generated text (default: 0.8)</td>
 </tr>
@@ -221,16 +225,20 @@
 <td>A higher value for top-p (e.g., 0.95) will lead to more diverse text, while a lower value (e.g., 0.5) will generate more focused and conservative text. The default value is 0.9.</td>
 </tr>
 <tr>
-<td>TOP_K</td>
-<td>A higher value for top-k (e.g., 100) will consider more tokens and lead to more diverse text, while a lower value (e.g., 10) will focus on the most probable tokens and generate more conservative text. The default value is 40.</td>
-</tr>
-<tr>
 <td>REPEAT_PENALTY</td>
 <td>The repeat-penalty option helps prevent the model from generating repetitive or monotonous text. A higher value (e.g., 1.5) will penalize repetitions more strongly, while a lower value (e.g., 0.9) will be more lenient. The default value is 1.1.</td>
 </tr>
 <tr>
+<td>TOP_K</td>
+<td>A higher value for top-k (e.g., 100) will consider more tokens and lead to more diverse text, while a lower value (e.g., 10) will focus on the most probable tokens and generate more conservative text. The default value is 40.</td>
+</tr>
+<tr>
 <td>LAST_N_TOKENS_SIZE</td>
 <td>Last n tokens to consider for penalizing repetition</td>
+</tr>
+<tr>
+<td>USE_MMAP</td>
+<td>Allows only the necessary parts to be loaded into memory and offloading the rest. Default false</td>
 </tr>
 <tr>
 <td>VERBOSE</td>
@@ -242,7 +250,7 @@
 </tr>
 <tr>
 <td>N_CTX</td>
-<td>Context size</td>
+<td>Context size default 8192</td>
 </tr>
 <tr>
 <td>N_BATCH</td>
@@ -250,7 +258,7 @@
 </tr>
 <tr>
 <td>MAX_TOKENS</td>
-<td>Max tokens. Default 256</td>
+<td>Max tokens. Default 4096</td>
 </tr>
 </tbody>
 </table>
