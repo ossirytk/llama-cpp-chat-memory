@@ -23,7 +23,16 @@ hatch shell chat
 cd .\src\llama_cpp_chat_memory\
 flask --app flask_web_server run
 ```
+### Running the terminal chatbot
+You can run the chatbot directly in the terminal without starting a web browser. The terminal script is a low effort way to debug the chatbot quickly.
+
+```
+cd src\llama_cpp_langchain_chat
+python -m document_parsing.terminal_chatbot
+```
 ### Avatar Images
 Avatar images need to be stored in the .\public\avatars folder. Make sure that the folder exists. Character cards in png format will have a copy of the image data saved in the avatars folder automatically. If you copy an image manually, make sure that the filename matches the name is the character card and replace the whitespace in the name with underscores.
 ### Vector search
 The search for relevant documents from chroma happens based on VECTOR_SORT_TYPE and VECTOR_K. The search will return VECTOR_K+4 closest matches and sorts by sort type before appending to vector_k. Default search simply sorts by distance. "bm25" sorts with the bm25 search algorithm. Fusion rank gets the combined results of both.
+### Query metadata
+The query is parsed for metadata using spacy. The metadata keys are used as a filter when searching the Chroma collections.

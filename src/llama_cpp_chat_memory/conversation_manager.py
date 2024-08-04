@@ -4,15 +4,19 @@ import json
 import logging
 import re
 from collections import deque
+from functools import partial
 from os import getcwd, getenv, makedirs, mkdir
 from os.path import dirname, exists, join, realpath, splitext
 
 import chainlit as cl
 import chromadb
 import pandas as pd
+import spacy
 import yaml
 from chromadb.config import Settings
 from custom_llm_classes.custom_spacy_embeddings import CustomSpacyEmbeddings
+from document_parsing.extract import entities, ngrams, terms
+from document_parsing.extract.basics import terms_to_strings
 from dotenv import find_dotenv, load_dotenv
 from langchain.schema.runnable.config import RunnableConfig
 from langchain_community.embeddings import HuggingFaceEmbeddings, LlamaCppEmbeddings
@@ -86,7 +90,9 @@ class ConveresationManager:
             # Initial chains
             self.conversation_chain = self.prompt | self.llm_model
             self.conversation_chain_test = self.prompt | self.llm_model | output_parser
-            self.refine_chain = self.question_refining_prompt | self.llm_model | output_parser
+            self.refine_type = getenv("REFINE_TYPE")
+            self.refine_model = spacy.load(getenv("REFINE_MODEL"))
+            self.parse_spacy_refining_config()
         else:
             # TODO Improve these test settings
             # Character card details
@@ -114,6 +120,21 @@ class ConveresationManager:
             self.mes_retriever = self.instantiate_retriever("mex_default")
             self.context_retriever = self.instantiate_retriever("context_default")
             self.vector_sort_type = getenv("VECTOR_SORT_TYPE")
+
+    def parse_spacy_refining_config(self):
+        parse_config_path = join(".", getenv("REFINE_CONFIG"))
+        if exists(parse_config_path):
+            with open(parse_config_path) as key_file:
+                filter_content = key_file.read()
+            filter_configs = json.loads(filter_content)
+        else:
+            logging.info("Could not load parse config file")
+            return
+
+        self.ngrams_list = filter_configs["ngs"]
+        self.entities_list = filter_configs["entities"]
+        self.noun_chunks = filter_configs["noun_chunks"]
+        self.extract_type = filter_configs["extract_type"]
 
     def parse_collections_config(self):
         collection_config_path = getenv("COLLECTION_CONFIG")
@@ -548,11 +569,19 @@ class ConveresationManager:
         self.chat_log.info(message)
         vector_k = int(getenv("VECTOR_K"))
 
-        # TODO rework this. The question refining prompt can have poor accuracy
-        # Use ner?
-        # Move to another method
         self.chat_log.info(f"Query {message}")
-        metadata_result = self.refine_chain.invoke(message)
+        doc = self.refine_model(message)
+        extracted_terms = terms(
+            doc,
+            ngs=partial(ngrams, n=self.noun_chunks, include_pos=self.ngrams_list),
+            ents=partial(
+                entities,
+                include_types=self.entities_list,
+            ),
+            dedupe=True,
+        )
+        metadata_terms = list(terms_to_strings(extracted_terms, by=self.extract_type))
+        metadata_result = ", ".join(metadata_terms)
 
         mes_filter = self.get_metadata_filter(metadata_result, self.all_mes_keys, self.mes_retriever)
         mes_docs = self.get_vector(message, self.mes_retriever, mes_filter, vector_k)
@@ -595,11 +624,19 @@ class ConveresationManager:
         self.chat_log.info(message.content)
         vector_k = int(getenv("VECTOR_K"))
 
-        # TODO rework this. The question refining prompt can have poor accuracy
-        # Use ner?
-        # Move to another method
         self.chat_log.info(f"Query {message}")
-        metadata_result = self.refine_chain.invoke(message)
+        doc = self.refine_model(message.content)
+        extracted_terms = terms(
+            doc,
+            ngs=partial(ngrams, n=self.noun_chunks, include_pos=self.ngrams_list),
+            ents=partial(
+                entities,
+                include_types=self.entities_list,
+            ),
+            dedupe=True,
+        )
+        metadata_terms = list(terms_to_strings(extracted_terms, by=self.extract_type))
+        metadata_result = ", ".join(metadata_terms)
 
         mes_filter = self.get_metadata_filter(metadata_result, self.all_mes_keys, self.mes_retriever)
         mes_docs = self.get_vector(message.content, self.mes_retriever, mes_filter, vector_k)

@@ -20,6 +20,8 @@ COLLECTION_CONFIG | Path to run config file for collection and prompt
 EMBEDDINGS_TYPE | llama/spacy/hugginface
 EMBEDDINGS_MODEL | spacy/hugginface model name (needs to be installed)
 CUSTOM_CSS | Url to the custom css file to be used by the application.
+REFINE_MODEL | Spacy model used for metadata ner parsing
+REFINE_CONFIG | Ner config file used for metadata ner parsing
 VECTOR_SORT_TYPE | Vector searach sort type distance/bm25/fusionrank
 VECTOR_K | Fetch k closest embeddings for mmr
 BUFFER_K | Buffer last k exchanges to conversation context
@@ -29,17 +31,17 @@ LAYERS        | Number of layers to offload to gpu
 SEED | Seed used for generation. Default random (-1)
 N_PARTS | How many parts the model is divided into. Default auto (-1)
 USE_MLOCK | Load the whole model into ram. Default False
-USE_MMAP | Allows only the necessary parts to be loaded into memory and offloading the rest. Default false
 TEMPERATURE | Adjust the randomness of the generated text (default: 0.8)
 TOP_P | A higher value for top-p (e.g., 0.95) will lead to more diverse text, while a lower value (e.g., 0.5) will generate more focused and conservative text. The default value is 0.9.
-TOP_K | A higher value for top-k (e.g., 100) will consider more tokens and lead to more diverse text, while a lower value (e.g., 10) will focus on the most probable tokens and generate more conservative text. The default value is 40.
 REPEAT_PENALTY | The repeat-penalty option helps prevent the model from generating repetitive or monotonous text. A higher value (e.g., 1.5) will penalize repetitions more strongly, while a lower value (e.g., 0.9) will be more lenient. The default value is 1.1.
+TOP_K | A higher value for top-k (e.g., 100) will consider more tokens and lead to more diverse text, while a lower value (e.g., 10) will focus on the most probable tokens and generate more conservative text. The default value is 40.
 LAST_N_TOKENS_SIZE | Last n tokens to consider for penalizing repetition
+USE_MMAP | Allows only the necessary parts to be loaded into memory and offloading the rest. Default false
 VERBOSE | Verbose mode. Default True
 ROPE_CONTEXT | Rope context for rope scaling
-N_CTX | Context size
+N_CTX | Context size default 8192
 N_BATCH | Message write batch size
-MAX_TOKENS | Max tokens. Default 256
+MAX_TOKENS | Max tokens. Default 4096
 
 ### General Configs
 Other configs are found in the run_files folder. These include Webscrape configs, ner parse configs and filter configs. 
