@@ -67,19 +67,31 @@ class ConveresationManager:
 
             # Collections and template
             self.prompt_template_dir: str = ""
-            self.mes_collection_name: str = ""
-            self.context_collection_name: str = ""
             self.prompt_template: str = ""
 
             # Init things
             self.collections_config = self.parse_collections_config()
-            self.all_mes_keys = self.parse_keys("mex_default")
-            self.all_context_keys = self.parse_keys("context_default")
+            self.mes_collection_name = self.collections_config["mex_default"]
+            self.context_collection_name = self.collections_config["context_default"]
+            if self.mes_collection_name != "none" or self.context_collection_name != "none":
+                self.embedder = self.instantiate_embeddings()
+                self.use_embeddings = True
+            else:
+                self.use_embeddings = False
+            if self.collections_config["mex_default"] != "none":
+                self.all_mes_keys = self.parse_keys("mex_default")
+                self.mes_retriever = self.instantiate_retriever("mex_default")
+                self.use_mes = True
+            else:
+                self.use_mes = False
+            if self.collections_config["context_default"] != "none":
+                self.all_context_keys = self.parse_keys("context_default")
+                self.context_retriever = self.instantiate_retriever("context_default")
+                self.use_context = True
+            else:
+                self.use_context = False
             self.question_refining_prompt = self.parse_question_refining_metadata_prompt()
             self.prompt = self.parse_prompt()
-            self.embedder = self.instantiate_embeddings()
-            self.mes_retriever = self.instantiate_retriever("mex_default")
-            self.context_retriever = self.instantiate_retriever("context_default")
             self.llm_model = self.instantiate_llm()
             self.historylen = int(getenv("BUFFER_K"))
             self.vector_sort_type = getenv("VECTOR_SORT_TYPE")
@@ -94,7 +106,6 @@ class ConveresationManager:
             self.refine_model = spacy.load(getenv("REFINE_MODEL"))
             self.parse_spacy_refining_config()
         else:
-            # TODO Improve these test settings
             # Character card details
             self.character_name: str = ""
             self.description: str = ""
@@ -107,16 +118,30 @@ class ConveresationManager:
 
             # Collections and template
             self.prompt_template_dir: str = ""
-            self.mes_collection_name: str = ""
-            self.context_collection_name: str = ""
             self.prompt_template: str = ""
 
             # Init things
             self.collections_config = self.parse_collections_config()
-            self.all_mes_keys = self.parse_keys("mex_default")
-            self.all_context_keys = self.parse_keys("context_default")
+            self.mes_collection_name = self.collections_config["mex_default"]
+            self.context_collection_name = self.collections_config["context_default"]
+            if self.mes_collection_name != "none" or self.context_collection_name != "none":
+                self.embedder = self.instantiate_embeddings()
+                self.use_embeddings = True
+            else:
+                self.use_embeddings = False
+            if self.collections_config["mex_default"] != "none":
+                self.all_mes_keys = self.parse_keys("mex_default")
+                self.mes_retriever = self.instantiate_retriever("mex_default")
+                self.use_mes = True
+            else:
+                self.use_mes = False
+            if self.collections_config["context_default"] != "none":
+                self.all_context_keys = self.parse_keys("context_default")
+                self.context_retriever = self.instantiate_retriever("context_default")
+                self.use_context = True
+            else:
+                self.use_context = False
             self.prompt = self.parse_prompt()
-            self.embedder = self.instantiate_embeddings()
             self.mes_retriever = self.instantiate_retriever("mex_default")
             self.context_retriever = self.instantiate_retriever("context_default")
             self.vector_sort_type = getenv("VECTOR_SORT_TYPE")
@@ -146,7 +171,7 @@ class ConveresationManager:
         return config_json
 
     # Get metadata filter keys for this collection
-    def parse_keys(self, vector_type: str):
+    def parse_keys(self, vector_type: str) -> pd.DataFrame:
         if vector_type in ("mex_default", "context_default"):
             collection_name = self.collections_config[vector_type]
             self.chat_log.debug("Using default keys")
@@ -170,7 +195,8 @@ class ConveresationManager:
         elif all_keys is not None and "Content" not in all_keys:
             return pd.DataFrame.from_dict(all_keys, orient="index", columns=["keys"])
         else:
-            return None
+            error_message = "Could not load keys"
+            raise ValueError(error_message)
 
     def parse_question_refining_metadata_prompt(self) -> BasePromptTemplate:
         # TODO RUN CONFIG PROMPT TEMPLATE
@@ -362,11 +388,6 @@ class ConveresationManager:
         self.prompt_template = new_template
 
     def instantiate_embeddings(self) -> Embeddings:
-        self.mes_collection_name = self.collections_config["mex_default"]
-        self.context_collection_name = self.collections_config["context_default"]
-        if self.mes_collection_name == "none" and self.context_collection_name == "none":
-            return None
-
         model_dir = getenv("MODEL_DIR")
         makedirs(model_dir, exist_ok=True)
         model = getenv("MODEL")
@@ -412,7 +433,7 @@ class ConveresationManager:
             self.chat_log.info(f"Setting retriever to: {retriever_string}")
             collection_name = retriever_string
 
-        if self.embedder is None or collection_name == "none":
+        if not self.use_embeddings or collection_name == "none":
             self.chat_log.info("Embedder is None or collection name is none")
             return None
 
@@ -504,51 +525,58 @@ class ConveresationManager:
             df = df.sort_values(vector_sort_type, ascending=False)
         return df
 
-    def get_metadata_filter(self, metadata_result: str, all_keys: str, retriever: Chroma):
-        if retriever is not None:
-            self.chat_log.info(f"Query metadata {metadata_result}")
-            # Currently Chroma has no "like" implementation so this is a case sensitive hack with uuids
-            # There is also an issue when filter has only one item since "in" expects multiple items
-            # With one item, just use a dict with "uuid", "filter"
-            filter_dict = {}
-            metadata_result = re.sub("Keywords?:?|keywords?:?|\\[.*\\]", "", metadata_result)
-            if len(metadata_result.split()) > 1 and all_keys is not None and not all_keys.empty:
-                # TODO improve this
-                tokens = regexp_tokenize(metadata_result, r"\w+", gaps=False)
-                keys_df = all_keys[all_keys["keys"].isin(tokens)]
-                keys_dict = keys_df.to_dict()
-                filter_dict = keys_dict["keys"]
-            elif len(metadata_result.split()) == 1:
-                keys_df = all_keys[all_keys["keys"] == metadata_result]
-                keys_dict = keys_df.to_dict()
-                filter_dict = keys_dict["keys"]
-            else:
-                self.chat_log.info("NOTICE: Not using any filter keys")
+    def get_metadata_filter(self, metadata_result: str, filter_type: str) -> str:
+        if filter_type == "mes":
+            all_keys = self.all_mes_keys
+        else:
+            all_keys = self.all_context_keys
 
-            if len(filter_dict) == 1:
-                metadata_filter = {}
-                for item in filter_dict.items():
-                    metadata_filter[item[0]] = item[1]
-                where = filter_dict
-            elif len(filter_dict) > 1:
-                metadata_filter_list = []
-                for item in filter_dict.items():
-                    metadata_filter_list.append({item[0]: {"$in": [item[1]]}})
-                where = {"$or": metadata_filter_list}
-            else:
-                where = None
-            return where
+        self.chat_log.info(f"Query metadata {metadata_result}")
+        # Currently Chroma has no "like" implementation so this is a case sensitive hack with uuids
+        # There is also an issue when filter has only one item since "in" expects multiple items
+        # With one item, just use a dict with "uuid", "filter"
+        filter_dict = {}
+        metadata_result = re.sub("Keywords?:?|keywords?:?|\\[.*\\]", "", metadata_result)
+
+        key_split = metadata_result.split()
+        if len(key_split) > 1:
+            tokens = regexp_tokenize(metadata_result, r"\w+", gaps=False)
+            keys_df = all_keys[all_keys["keys"].isin(tokens)]
+            keys_dict = keys_df.to_dict()
+            filter_dict = keys_dict["keys"]
+        elif len(key_split) == 1:
+            keys_df = all_keys[all_keys["keys"] == metadata_result]
+            keys_dict = keys_df.to_dict()
+            filter_dict = keys_dict["keys"]
+
+        where = ""
+
+        if len(filter_dict) == 1:
+            metadata_filter = {}
+            for item in filter_dict.items():
+                metadata_filter[item[0]] = item[1]
+            where = filter_dict
+        elif len(filter_dict) > 1:
+            metadata_filter_list = []
+            for item in filter_dict.items():
+                metadata_filter_list.append({item[0]: {"$in": [item[1]]}})
+            where = {"$or": metadata_filter_list}
+        return where
 
     def get_vector(
-        self, message: str, retriever: Chroma, metadata_filter: str, k_size: int
+        self, message: str, filter_type: str, metadata_filter: str, k_size: int
     ) -> list[tuple[Document, float]]:
-        if retriever is not None:
-            self.chat_log.info(f"There are {retriever._collection.count()} documents in the collection")
-            self.chat_log.info(f"Filter {metadata_filter}")
+        if filter_type == "mes":
+            retriever = self.mes_retriever
+        else:
+            retriever = self.context_retriever
 
-            k_buffer = k_size + 4
-            docs = retriever.similarity_search_with_score(query=message, k=k_buffer, filter=metadata_filter)
-            return docs
+        self.chat_log.info(f"There are {retriever._collection.count()} documents in the collection")
+        self.chat_log.info(f"Filter {metadata_filter}")
+
+        k_buffer = k_size + 4
+        docs = retriever.similarity_search_with_score(query=message, k=k_buffer, filter=metadata_filter)
+        return docs
 
     def get_history(self) -> str:
         message_history = ""
@@ -570,7 +598,9 @@ class ConveresationManager:
         vector_k = int(getenv("VECTOR_K"))
 
         self.chat_log.info(f"Query {message}")
-        doc = self.refine_model(message)
+        query_message = message.replace(self.character_name, "")
+
+        doc = self.refine_model(query_message)
         extracted_terms = terms(
             doc,
             ngs=partial(ngrams, n=self.noun_chunks, include_pos=self.ngrams_list),
@@ -581,27 +611,38 @@ class ConveresationManager:
             dedupe=True,
         )
         metadata_terms = list(terms_to_strings(extracted_terms, by=self.extract_type))
-        metadata_result = ", ".join(metadata_terms)
+        if len(metadata_terms) > 1:
+            metadata_result = ", ".join(metadata_terms)
+        elif len(metadata_terms) == 1:
+            metadata_result = metadata_terms[0]
+        else:
+            metadata_result = ""
 
-        mes_filter = self.get_metadata_filter(metadata_result, self.all_mes_keys, self.mes_retriever)
-        mes_docs = self.get_vector(message, self.mes_retriever, mes_filter, vector_k)
         mes_context = ""
-        if mes_docs is not None and len(mes_docs) > 1:
-            mes_df: pd.DataFrame = self.calculate_fusion_rank(message, mes_docs)
-            mes_df = mes_df.iloc[0:vector_k]
-            mes_context = "\n".join(mes_df["content"].tolist())
-        elif mes_docs is not None and len(mes_docs) == 1:
-            mes_context = mes_docs[0].page_content
+        if self.use_mes:
+            mes_filter = self.get_metadata_filter(metadata_result, "mes")
+            mes_docs = self.get_vector(query_message, "mes", mes_filter, vector_k)
+            if mes_docs is not None and len(mes_docs) > 1:
+                mes_df: pd.DataFrame = self.calculate_fusion_rank(query_message, mes_docs)
+                mes_df = mes_df.iloc[0:vector_k]
+                mes_context = "\n".join(mes_df["content"].tolist())
+            elif mes_docs is not None and len(mes_docs) == 1:
+                mes_context = mes_docs[0][0].page_content
 
-        context_filter = self.get_metadata_filter(metadata_result, self.all_context_keys, self.context_retriever)
-        vector_docs = self.get_vector(message, self.context_retriever, context_filter, vector_k)
         vector_context = ""
-        if vector_docs is not None and len(vector_docs) > 1:
-            vector_context_df: pd.DataFrame = self.calculate_fusion_rank(message, vector_docs)
-            vector_context_df = vector_context_df.iloc[0:vector_k]
-            vector_context = "\n".join(vector_context_df["content"].tolist())
-        elif vector_docs is not None and len(vector_docs) == 1:
-            vector_context = vector_docs[0].page_content
+        if self.use_context:
+            context_filter = self.get_metadata_filter(metadata_result, "context")
+            vector_docs = self.get_vector(query_message, "context", context_filter, vector_k)
+
+            if vector_docs is not None and len(vector_docs) > 1:
+                vector_context_df: pd.DataFrame = self.calculate_fusion_rank(query_message, vector_docs)
+                vector_context_df = vector_context_df.iloc[0:vector_k]
+                vector_context = "\n".join(vector_context_df["content"].tolist())
+            elif vector_docs is not None and len(vector_docs) == 1:
+                vector_context = vector_docs[0].page_content
+
+        vector_context = vector_context.replace("{{char}}", self.character_name)
+        mes_context = mes_context.replace("{{char}}", self.character_name)
 
         history = self.get_history()
         query_input = {
@@ -624,8 +665,9 @@ class ConveresationManager:
         self.chat_log.info(message.content)
         vector_k = int(getenv("VECTOR_K"))
 
-        self.chat_log.info(f"Query {message}")
-        doc = self.refine_model(message.content)
+        query_message = message.content.replace(self.character_name, "")
+
+        doc = self.refine_model(query_message)
         extracted_terms = terms(
             doc,
             ngs=partial(ngrams, n=self.noun_chunks, include_pos=self.ngrams_list),
@@ -638,25 +680,30 @@ class ConveresationManager:
         metadata_terms = list(terms_to_strings(extracted_terms, by=self.extract_type))
         metadata_result = ", ".join(metadata_terms)
 
-        mes_filter = self.get_metadata_filter(metadata_result, self.all_mes_keys, self.mes_retriever)
-        mes_docs = self.get_vector(message.content, self.mes_retriever, mes_filter, vector_k)
         mes_context = ""
-        if mes_docs is not None and len(mes_docs) > 1:
-            mes_df: pd.DataFrame = self.calculate_fusion_rank(message.content, mes_docs)
-            mes_df = mes_df.iloc[0:vector_k]
-            mes_context = "\n".join(mes_df["content"].tolist())
-        elif mes_docs is not None and len(mes_docs) == 1:
-            mes_context = mes_docs[0].page_content
+        if self.use_mes:
+            mes_filter = self.get_metadata_filter(metadata_result, "mes")
+            mes_docs = self.get_vector(query_message, "mes", mes_filter, vector_k)
+            if mes_docs is not None and len(mes_docs) > 1:
+                mes_df: pd.DataFrame = self.calculate_fusion_rank(query_message, mes_docs)
+                mes_df = mes_df.iloc[0:vector_k]
+                mes_context = "\n".join(mes_df["content"].tolist())
+            elif mes_docs is not None and len(mes_docs) == 1:
+                mes_context = mes_docs[0][0].page_content
 
-        context_filter = self.get_metadata_filter(metadata_result, self.all_context_keys, self.context_retriever)
-        vector_docs = self.get_vector(message.content, self.context_retriever, context_filter, vector_k)
         vector_context = ""
-        if vector_docs is not None and len(vector_docs) > 1:
-            vector_context_df: pd.DataFrame = self.calculate_fusion_rank(message.content, vector_docs)
-            vector_context_df = vector_context_df.iloc[0:vector_k]
-            vector_context = "\n".join(vector_context_df["content"].tolist())
-        elif vector_docs is not None and len(vector_docs) == 1:
-            vector_context = vector_docs[0].page_content
+        if self.use_context:
+            context_filter = self.get_metadata_filter(metadata_result, "context")
+            vector_docs = self.get_vector(query_message, "context", context_filter, vector_k)
+            if vector_docs is not None and len(vector_docs) > 1:
+                vector_context_df: pd.DataFrame = self.calculate_fusion_rank(query_message, vector_docs)
+                vector_context_df = vector_context_df.iloc[0:vector_k]
+                vector_context = "\n".join(vector_context_df["content"].tolist())
+            elif vector_docs is not None and len(vector_docs) == 1:
+                vector_context = vector_docs[0].page_content
+
+        vector_context = vector_context.replace("{{char}}", self.character_name)
+        mes_context = mes_context.replace("{{char}}", self.character_name)
 
         history = self.get_history()
         query_input = {
@@ -687,18 +734,26 @@ class ConveresationManager:
             f"Current Settings: {self.prompt_template}, {self.mes_collection_name} and {self.context_collection_name}"
         )
 
-        if settings["prompt_template_options"] not in ("none", self.prompt_template):
+        # TODO does this actually correctly disable with none?
+
+        if settings["prompt_template_options"] != self.prompt_template:
             self.change_prompt(settings["prompt_template_options"])
             self.chat_log.info(f"Prompte template changed to: {settings['prompt_template_options']}")
 
-        if settings["mex_collection"] not in ("none", self.mes_collection_name):
+        if settings["mex_collection"] == "none":
+            self.use_mes = False
+        elif settings["mex_collection"] != self.mes_collection_name:
             self.all_mes_keys = self.parse_keys(settings["mex_collection"])
             self.mes_retriever = self.instantiate_retriever(settings["mex_collection"])
+            self.use_mes = True
             self.chat_log.info(f"Mex collection changed to: {settings['mex_collection']}")
 
-        if settings["context_collection"] not in ("none", self.context_collection_name):
+        if settings["context_collection"] == "none":
+            self.use_context = False
+        elif settings["context_collection"] != self.context_collection_name:
             self.all_context_keys = self.parse_keys(settings["context_collection"])
             self.context_retriever = self.instantiate_retriever(settings["context_collection"])
+            self.use_context = True
             self.chat_log.info(f"Context collection changed to: {settings['context_collection']}")
 
     def get_prompt_templates(self) -> list[str]:

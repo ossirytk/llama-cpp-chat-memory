@@ -40,6 +40,7 @@ dependencies = [
 "flask==3.0.3",
 "nltk==3.8.1",
 "rank-bm25==0.2.2",
+"click==8.1.7",
 ]
 
 [project.urls]

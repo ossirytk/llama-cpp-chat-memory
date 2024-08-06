@@ -45,10 +45,11 @@ python -m document_parsing.test_embeddings  --collection-name hogwarts --query "
 
 Optional params         | Description
 ---------------------- | -------------
---data-directory       | The directory where your text files are stored. Default "./run_files/documents/skynet"
+--documents-directory       | The directory where your text files are stored. Default "./run_files/documents/skynet"
 --collection-name      | The name of the collection. Default "skynet"
 --persist-directory    | The directory where you want to store the Chroma collection. Default "./run_files/character_storage/"
 --key-storage          | The directory for the collection metadata keys Need to be created with textacy parsing. Default "./run_files/key_storage/"
+--keyfile-name          | The name of the keyfile. Matches collection name by default.
 --chunk-size           | The text chunk size for parsing. Default "1024"
 --chunk-overlap        | The overlap for text chunks for parsing. Default "0"
 --embeddings-type      | The chosen embeddings type. Default "spacy"
