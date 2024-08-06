@@ -547,6 +547,7 @@ class ConveresationManager:
             self.chat_log.info(f"Filter {metadata_filter}")
 
             k_buffer = k_size + 4
+            # TODO Replace char name here with material placeholder
             docs = retriever.similarity_search_with_score(query=message, k=k_buffer, filter=metadata_filter)
             return docs
 
@@ -603,6 +604,8 @@ class ConveresationManager:
         elif vector_docs is not None and len(vector_docs) == 1:
             vector_context = vector_docs[0].page_content
 
+        vector_context = vector_context.replace("{{Char}}", self.character_name)
+
         history = self.get_history()
         query_input = {
             "input": message,
@@ -657,6 +660,8 @@ class ConveresationManager:
             vector_context = "\n".join(vector_context_df["content"].tolist())
         elif vector_docs is not None and len(vector_docs) == 1:
             vector_context = vector_docs[0].page_content
+
+        vector_context = vector_context.replace("{{Char}}", self.character_name)
 
         history = self.get_history()
         query_input = {
