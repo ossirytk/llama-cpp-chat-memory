@@ -1,7 +1,7 @@
-import argparse
 import logging
 
 import chromadb
+import click
 from chromadb.api.client import Client
 from chromadb.config import Settings
 from dotenv import find_dotenv, load_dotenv
@@ -11,6 +11,22 @@ logging.basicConfig(format="%(message)s", encoding="utf-8", level=logging.DEBUG)
 load_dotenv(find_dotenv())
 
 
+@click.command()
+@click.argument("command", type=click.Choice(["list", "delete"]))
+@click.option(
+    "--collection-name",
+    "-c",
+    "collection_name",
+    default="skynet",
+    help="The name of the Chroma collection that's the target of an action",
+)
+@click.option(
+    "--persist-directory",
+    "-p",
+    "persist_directory",
+    default="./run_files/character_storage/",
+    help="The directory where you want to store the Chroma collection",
+)
 def main(
     collection_name: str,
     persist_directory: str,
@@ -36,34 +52,4 @@ def main(
 
 
 if __name__ == "__main__":
-    # Read the data directory, collection name, and persist directory
-    parser = argparse.ArgumentParser(description="Parse text into documents and upload to chroma")
-
-    parser.add_argument(
-        "--collection-name",
-        type=str,
-        default="skynet",
-        help="The name of the Chroma collection",
-    )
-    parser.add_argument(
-        "--persist-directory",
-        type=str,
-        default="./run_files/character_storage/",
-        help="The directory where you want to store the Chroma collection",
-    )
-
-    parser.add_argument(
-        "--command",
-        type=str,
-        default="list",
-        help='Command for chroma client. "list" or "delete"',
-    )
-
-    # Parse arguments
-    args = parser.parse_args()
-
-    main(
-        collection_name=args.collection_name,
-        persist_directory=args.persist_directory,
-        command=args.command,
-    )
+    main()

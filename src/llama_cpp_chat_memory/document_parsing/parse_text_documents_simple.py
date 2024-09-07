@@ -16,8 +16,6 @@ import pandas as pd
 from chromadb.config import Settings
 from custom_llm_classes.custom_spacy_embeddings import CustomSpacyEmbeddings
 from dotenv import find_dotenv, load_dotenv
-from langchain.text_splitter import RecursiveCharacterTextSplitter
-from langchain_community.document_loaders import TextLoader
 from langchain_community.embeddings import HuggingFaceEmbeddings, LlamaCppEmbeddings
 from langchain_community.vectorstores import Chroma
 from langchain_core.documents.base import Document
@@ -112,21 +110,17 @@ def clean_and_merge_documents(que, name) -> pd.DataFrame:
 @click.option("--keyfile-name", "-k", default="none", help="Keyfile name. If not given, defaults to collection name.")
 @click.option("--embeddings-type", "-e", default="spacy", help="The chosen embeddings type.")
 @click.option("--threads", "-t", default=6, type=int, help="The number of threads to use for parsing.")
-@click.option("--chunk-size", "-cs", default=2048, type=int, help="Data chunk for size for parsing.")
-@click.option("--chunk-overlap", "-co", default=1024, type=int, help="Overlap for the chunks.")
 def main(
     documents_directory: str,
     collection_name: str,
     persist_directory: str,
-    chunk_size: int,
-    chunk_overlap: int,
     key_storage: str,
     keyfile_name: str,
     embeddings_type: str,
     threads: int,
 ) -> None:
     """
-    This script parses text documents into a chroma collection. Using langchain RecursiveSplitter.
+    This script parses text documents into a chroma collection. Using simple stop string parsing.
     Text documents are loaded from a directory and parsed into chunk sized text pieces.
     These pieces are matched for metadata keys in keyfile.
     The matching is done with multiprocess to improve perf for large collections and keyfiles.
@@ -141,11 +135,16 @@ def main(
     documents_paths_txt = glob.glob(documents_pattern)
 
     all_documents = []
-    text_splitter = RecursiveCharacterTextSplitter(chunk_size=chunk_size, chunk_overlap=chunk_overlap)
     for txt_document in documents_paths_txt:
-        loader = TextLoader(txt_document, encoding="utf-8")
-        documents = loader.load()
-        docs = text_splitter.split_documents(documents)
+        docs = []
+        with open(txt_document, encoding="utf-8") as f:
+            text = f.read()
+            split_text = text.split("\n\n")
+
+        for line in split_text:
+            text_doc = Document(line)
+            docs.append(text_doc)
+
         all_documents.extend(docs)
 
     if keyfile_name == "none":
@@ -161,7 +160,6 @@ def main(
     if "Content" in all_keys:
         all_keys = all_keys["Content"]
 
-    # Start Timer
     tic = time.perf_counter()
 
     manager = Manager()
@@ -267,10 +265,12 @@ def main(
     # Stop timer
     toc = time.perf_counter()
     NER_LOGGER.info(f"Storing embeddings took {toc - tic:0.4f} seconds")
-
     NER_LOGGER.info(f"Read metadata filters from directory: {key_storage_path}")
+    if keyfile_name == "none":
+        NER_LOGGER.info(f"Metadata file is: {collection_name}.json")
+    else:
+        NER_LOGGER.info(f"Metadata file is: {keyfile_name}")
     NER_LOGGER.info(f"Read files from directory: {documents_directory}")
-    NER_LOGGER.info(f"Text parsed with chunk size: {chunk_size}, and chunk overlap: {chunk_overlap}")
     NER_LOGGER.info(f"Saved collection as: {collection_name}")
     NER_LOGGER.info(f"Saved collection to: {persist_directory}")
 

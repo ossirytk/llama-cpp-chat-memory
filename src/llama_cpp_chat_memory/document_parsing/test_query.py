@@ -1,9 +1,9 @@
-import argparse
 import json
 import logging
 from functools import partial
 from os.path import exists, join
 
+import click
 import spacy
 from dotenv import find_dotenv, load_dotenv
 
@@ -14,12 +14,32 @@ logging.basicConfig(format="%(message)s", encoding="utf-8", level=logging.DEBUG)
 load_dotenv(find_dotenv())
 
 
+@click.command()
+@click.argument("query")
+@click.option(
+    "--model",
+    "-m",
+    default="en_core_web_lg",
+    help="The spacy model to parse the text",
+)
+@click.option(
+    "--parse-config-directory", "-pcd", default="./run_files/parse_configs/", help="The parse config directory"
+)
+@click.option(
+    "--parse-config-file",
+    "-pcf",
+    default="query_metadata_filter.json",
+    help="The parse config file",
+)
 def main(
     query: str,
     model: str,
     parse_config_directory: str,
     parse_config_file: str,
 ) -> None:
+    """
+    This script is for testing metadata parsing with spacy. Parses the keywords from a query.
+    """
     spacy_lang = spacy.load(model)
     doc = spacy_lang(query)
     parse_config_path = join(".", parse_config_directory, parse_config_file)
@@ -52,46 +72,4 @@ def main(
 
 
 if __name__ == "__main__":
-    # Read the data directory, collection name, and persist directory
-    parser = argparse.ArgumentParser(
-        description="Parse ner keywords from text using spacy and grammar configuration files."
-    )
-
-    # Add arguments
-    parser.add_argument(
-        "--query",
-        type=str,
-        default="What is Polito to cyborgs and Shodan?",
-        help="Query to the vector storage",
-    )
-
-    parser.add_argument(
-        "--model",
-        type=str,
-        default="en_core_web_lg",
-        help="The spacy model to parse the text.",
-    )
-
-    parser.add_argument(
-        "--parse-config-directory",
-        type=str,
-        default="./run_files/parse_configs/",
-        help="The parse config directory",
-    )
-
-    parser.add_argument(
-        "--parse-config-file",
-        type=str,
-        default="query_metadata_filter.json",
-        help="The parse config file",
-    )
-
-    # Parse arguments
-    args = parser.parse_args()
-
-    main(
-        query=args.query,
-        model=args.model,
-        parse_config_directory=args.parse_config_directory,
-        parse_config_file=args.parse_config_file,
-    )
+    main()
