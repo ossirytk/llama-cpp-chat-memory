@@ -3,31 +3,45 @@ enable_telemetry = false
 user_env = []
 session_timeout = 50000
 cache = false
+allow_origins = [ "*",]
 
 [features]
-prompt_playground = true
 unsafe_allow_html = false
 latex = false
+auto_tag_thread = true
+edit_message = true
 
 [UI]
 name = "Assistant"
-show_readme_as_default = true
 default_collapse_content = true
-default_expand_messages = false
-hide_cot = false
+cot = "hidden"
 custom_css = "http://127.0.0.1:5000/static/style.css"
 
 [meta]
-generated_by = "1.0.100"
+generated_by = "1.1.404"
 
-[features.multi_modal]
+[features.spontaneous_file_upload]
 enabled = true
 accept = [ "*/*",]
 max_files = 20
 max_size_mb = 500
 
-[features.speech_to_text]
-enabled = false
+[features.audio]
+min_decibels = -45
+initial_silence_timeout = 3000
+silence_timeout = 1500
+max_duration = 15000
+chunk_duration = 1000
+sample_rate = 44100
 
 [UI.theme]
+default = "dark"
 layout = "wide"
+
+[UI.theme.light.primary]
+
+[UI.theme.light.text]
+
+[UI.theme.dark.primary]
+
+[UI.theme.dark.text]
