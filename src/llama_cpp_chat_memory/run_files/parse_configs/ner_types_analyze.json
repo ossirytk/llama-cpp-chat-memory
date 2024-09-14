@@ -1,6 +1,5 @@
 {
     "ngs": [
-        "PROPN",
         "NOUN",
         "VERB",
         "ADJ"
@@ -18,6 +17,6 @@
         "TIME",
         "WORK_OF_ART"
     ],
-    "noun_chunks": 2,
+    "noun_chunks": 1,
     "extract_type": "lemma"
 }
