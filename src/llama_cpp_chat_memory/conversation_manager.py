@@ -462,28 +462,24 @@ class ConveresationManager:
         # This can happen when large context models are told to print multiple paragraphs
         # Setting MAX_TOKENS lower than the context size can sometimes fix this
 
-        params = {
-            "seed": getenv("SEED"),
-            "n_ctx": getenv("N_CTX"),
-            "last_n_tokens_size": getenv("LAST_N_TOKENS_SIZE"),
-            "n_batch": getenv("N_BATCH"),
-            "max_tokens": getenv("MAX_TOKENS"),
-            "n_parts": getenv("N_PARTS"),
-            "use_mlock": getenv("USE_MLOCK"),
-            "use_mmap": getenv("USE_MMAP"),
-            "top_p": getenv("TOP_P"),
-            "top_k": getenv("TOP_K"),
-            "temperature": getenv("TEMPERATURE"),
-            "repeat_penalty": getenv("REPEAT_PENALTY"),
-            "n_gpu_layers": getenv("LAYERS"),
-            "rope_freq_scale": getenv("ROPE_CONTEXT"),
-            "verbose": getenv("VERBOSE"),
-        }
-
         llm_model_init = LlamaCpp(
             model_path=model_source,
             streaming=True,
-            **params,
+            seed=int(getenv("SEED")),
+            n_ctx=int(getenv("N_CTX")),
+            last_n_tokens_size=int(getenv("LAST_N_TOKENS_SIZE")),
+            n_batch=int(getenv("N_BATCH")),
+            max_tokens=int(getenv("MAX_TOKENS")),
+            n_parts=int(getenv("N_PARTS")),
+            use_mlock=bool(getenv("USE_MLOCK")),
+            use_mmap=bool(getenv("USE_MMAP")),
+            top_p=float(getenv("TOP_P")),
+            top_k=int(getenv("TOP_K")),
+            temperature=float(getenv("TEMPERATURE")),
+            repeat_penalty=float(getenv("REPEAT_PENALTY")),
+            n_gpu_layers=int(getenv("LAYERS")),
+            rope_freq_scale=float(getenv("ROPE_CONTEXT")),
+            verbose=bool(getenv("VERBOSE")),
         )
         return llm_model_init
 
