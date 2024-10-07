@@ -1,4 +1,3 @@
-import argparse
 import glob
 import json
 import logging
@@ -12,13 +11,13 @@ from multiprocessing import Manager, Pool
 from os.path import exists, join
 from queue import Queue
 
+import click
 import pandas as pd
-from dotenv import find_dotenv, load_dotenv
-from spacy.tokens import Doc
-
 from document_parsing.extract import entities, ngrams, terms
 from document_parsing.extract.basics import terms_to_strings
 from document_parsing.spacier import core
+from dotenv import find_dotenv, load_dotenv
+from spacy.tokens import Doc
 
 # This is the config for multiprocess logger
 # Setting the level to debug outputs multiprocess debug lines too
@@ -289,10 +288,66 @@ def clean_and_merge_chunks(que: Queue, name) -> pd.DataFrame:
     return df
 
 
+@click.command()
+@click.option(
+    "--documents-directory",
+    "-d",
+    "documents_directory",
+    default="./run_files/documents/skynet",
+    help="The directory where your text files are stored",
+)
+@click.option(
+    "--key-storage", "-k", default="./run_files/key_storage/", help="The directory for the collection metadata keys."
+)
+@click.option(
+    "--keyfile-name",
+    "-k",
+    "keyfile_name",
+    default="keyfile.json",
+    help="Keyfile name.",
+)
+@click.option(
+    "--model",
+    "-m",
+    default="en_core_web_lg",
+    help="The spacy model to parse the text",
+)
+@click.option(
+    "--parse-config-directory", "-pcd", default="./run_files/parse_configs/", help="The parse config directory"
+)
+@click.option(
+    "--parse-config-file",
+    "-pcf",
+    default="ner_types.json",
+    help="The parse config file",
+)
+@click.option(
+    "--chunk-size",
+    "-cs",
+    "chunk_size",
+    type=int,
+    default=1000000,
+    help="The text chunk size for parsing. Default spacy maximum chunk size",
+)
+@click.option(
+    "--chunk-overlap",
+    "-co",
+    "chunk_overlap",
+    default=0,
+    type=int,
+    help="The overlap for text chunks for parsing",
+)
+@click.option(
+    "--threads",
+    "-t",
+    default=6,
+    type=int,
+    help="The parse config file",
+)
 def main(
     documents_directory: str,
-    collection_name: str,
     key_storage: str,
+    keyfile_name: str,
     model: str,
     parse_config_directory: str,
     parse_config_file: str,
@@ -300,6 +355,7 @@ def main(
     chunk_overlap: int,
     threads: int,
 ) -> None:
+    """Parse ner keywords from text using spacy and grammar configuration files."""
     documents_pattern = os.path.join(documents_directory, "*.txt")
     documents_paths_txt = glob.glob(documents_pattern)
     text_corpus = ""
@@ -375,7 +431,7 @@ def main(
     if df is not None:
         df = df.drop_duplicates()
         NER_LOGGER.info(f"Total amount of keys created: {len(df.index)}")
-        key_storage_path = os.path.join(key_storage, collection_name + ".json")
+        key_storage_path = os.path.join(key_storage, keyfile_name + ".json")
 
         NER_LOGGER.debug("Create key file")
         json_key_file = df.to_json()
@@ -387,86 +443,4 @@ def main(
 
 
 if __name__ == "__main__":
-    # Read the data directory, collection name, and persist directory
-    parser = argparse.ArgumentParser(
-        description="Parse ner keywords from text using spacy and grammar configuration files."
-    )
-
-    # Add arguments
-    parser.add_argument(
-        "--data-directory",
-        type=str,
-        default="./run_files/documents/skynet",
-        help="The directory where your text files are stored",
-    )
-
-    parser.add_argument(
-        "--collection-name",
-        type=str,
-        default="skynet",
-        help="The name of the Chroma collection",
-    )
-
-    parser.add_argument(
-        "--key-storage",
-        type=str,
-        default="./run_files/key_storage/",
-        help="The directory where you want to store the Chroma collection metadata keys",
-    )
-
-    parser.add_argument(
-        "--model",
-        type=str,
-        default="en_core_web_lg",
-        help="The spacy model to parse the text.",
-    )
-
-    parser.add_argument(
-        "--parse-config-directory",
-        type=str,
-        default="./run_files/parse_configs/",
-        help="The parse config directory",
-    )
-
-    parser.add_argument(
-        "--parse-config-file",
-        type=str,
-        default="ner_types.json",
-        help="The parse config file",
-    )
-
-    parser.add_argument(
-        "--chunk-size",
-        type=int,
-        default=1000000,
-        help="The text chunk size for parsing. Default spacy maximum chunk size",
-    )
-
-    parser.add_argument(
-        "--chunk-overlap",
-        type=int,
-        default=0,
-        help="The overlap for text chunks for parsing",
-    )
-
-    parser.add_argument(
-        "--threads",
-        type=int,
-        default=6,
-        help="The number of threads to use.",
-    )
-
-    # Parse arguments
-    args = parser.parse_args()
-
-    main(
-        documents_directory=args.data_directory,
-        collection_name=args.collection_name,
-        key_storage=args.key_storage,
-        model=args.model,
-        parse_config_directory=args.parse_config_directory,
-        parse_config_file=args.parse_config_file,
-        chunk_size=args.chunk_size,
-        chunk_overlap=args.chunk_overlap,
-        threads=args.threads,
-    )
+    main()

@@ -1,23 +1,21 @@
-import argparse
 import glob
 import json
 import logging
 import os
 import re
-import uuid
 from collections.abc import Iterable
 from functools import partial
 from os.path import exists, join
 
-import pandas as pd
-from dotenv import find_dotenv, load_dotenv
-from spacy.tokens import Doc
-
+import click
 from document_parsing.extract import entities, ngrams, terms
 from document_parsing.extract.basics import terms_to_strings
 from document_parsing.spacier import core
+from dotenv import find_dotenv, load_dotenv
+from spacy.tokens import Doc
 
-logging.basicConfig(format="%(message)s", encoding="utf-8", level=logging.DEBUG)
+logging.basicConfig(format="%(message)s", encoding="utf-8", level=logging.INFO)
+
 load_dotenv(find_dotenv())
 
 SPACY_CHARACTER_LIMIT = 1000000
@@ -169,7 +167,7 @@ def process_documents(
     documents: Doc,
     parse_config_directory: str,
     parse_config_file: str,
-) -> pd.Series:
+) -> list:
     # You can use spacy.explain to get a description for these terms
     # Or see the model in https://spacy.io/usage/models and look for model label data
 
@@ -179,7 +177,7 @@ def process_documents(
             filter_content = key_file.read()
         filter_configs = json.loads(filter_content)
     else:
-        logging.debug("Could not load parse config file")
+        logging.info("Could not load parse config file")
         return
 
     ngrams_list = filter_configs["ngs"]
@@ -199,143 +197,104 @@ def process_documents(
     )
 
     lemma_strings = list(terms_to_strings(extracted_terms, by=extract_type))
-    all_keys = {}
 
     logging.debug(f"{len(lemma_strings)} metadata keys created")
-
-    # Create uuids for metadata filters
-    for line in lemma_strings:
-        filter_uuid = str(uuid.uuid1())
-        all_keys[filter_uuid] = line
-    return pd.Series(all_keys)
+    return lemma_strings
 
 
+@click.command()
+@click.option(
+    "--documents-directory",
+    "-d",
+    "documents_directory",
+    default="./run_files/documents/skynet",
+    help="The directory where your text files are stored",
+)
+@click.option(
+    "--key-storage", "-k", default="./run_files/key_storage/", help="The directory for the collection metadata keys."
+)
+@click.option(
+    "--keyfile-name",
+    "-k",
+    "keyfile_name",
+    default="keyfile.json",
+    help="Keyfile name.",
+)
+@click.option(
+    "--model",
+    "-m",
+    default="en_core_web_lg",
+    help="The spacy model to parse the text",
+)
+@click.option(
+    "--parse-config-directory", "-pcd", default="./run_files/parse_configs/", help="The parse config directory"
+)
+@click.option(
+    "--parse-config-file",
+    "-pcf",
+    default="ner_types_full.json",
+    help="The parse config file",
+)
+@click.option(
+    "--chunk-size",
+    "-cs",
+    "chunk_size",
+    type=int,
+    default=1000000,
+    help="The text chunk size for parsing. Default spacy maximum chunk size",
+)
+@click.option(
+    "--chunk-overlap",
+    "-co",
+    "chunk_overlap",
+    default=0,
+    type=int,
+    help="The overlap for text chunks for parsing",
+)
 def main(
     documents_directory: str,
-    collection_name: str,
     key_storage: str,
+    keyfile_name: str,
     model: str,
     parse_config_directory: str,
     parse_config_file: str,
     chunk_size: int,
     chunk_overlap: int,
 ) -> None:
+    """Parse ner keywords from text using spacy and grammar configuration files."""
     documents_pattern = os.path.join(documents_directory, "*.txt")
     documents_paths_txt = glob.glob(documents_pattern)
-    text_corpus = ""
 
+    # TODO c-TF-IDF instead of frequency
+    # Lemma graphs and matplotlib representations
+
+    data = {}
     for txt_document in documents_paths_txt:
-        logging.debug(f"Reading: {txt_document}")
+        logging.info(f"Parsing: {txt_document}")
         with open(txt_document, encoding="utf-8") as f:
             content = f.read()
-            text_corpus = text_corpus + content
+        parts = split_text(content, chunk_size, chunk_overlap)
 
-    logging.debug("Cleaning Corpus")
+        for part in parts:
+            doc = core.make_spacy_doc(part, lang=model)
+            words = process_documents(doc, parse_config_directory, parse_config_file)
+            for word in words:
+                if word in data.keys():
+                    data[word] = data[word] + 1
+                else:
+                    data[word] = 1
 
-    # the max corpus size is 1000000 characters so need to split the documents
-    parts = split_text(text_corpus, chunk_size, chunk_overlap)
-    df = None
-    for corpus in parts:
-        doc = core.make_spacy_doc(corpus, lang=model)
-        pseries = process_documents(doc, parse_config_directory, parse_config_file)
-        if df is None:
-            df = pd.DataFrame(pseries, columns=["Content"])
-        else:
-            df2 = pd.DataFrame(pseries, columns=["Content"])
-            df = pd.concat([df, df2])
+    # Filter words that occure only once
+    data = {k: v for k, v in data.items() if v > 1}
 
-    df = df.drop_duplicates()
-    logging.debug(f"Total amount of keys created: {len(df.index)}")
+    # Sort with most common first
+    sorted_data = dict(sorted(data.items(), key=lambda item: item[1], reverse=True))
 
-    df["Content"].apply(lambda x: x.strip())
-    # TODO Place this filter in config file
-    # Removes one and two letter words
-    m = ~df.apply(lambda x: x.str.contains("\\b[a-zA-Z]{1,2}\\b")).any(axis=1)
-    df = df[m]
-    key_storage_path = os.path.join(key_storage, collection_name + ".json")
-
-    logging.debug("Create key file")
-    json_key_file = df.to_json()
+    logging.info(f"Total words: {len(data)}")
+    key_storage_path = os.path.join(key_storage, keyfile_name + ".json")
     with open(key_storage_path, mode="w", encoding="utf-8") as key_file:
-        key_file.write(json_key_file)
-
-    logging.info(f"Read files from directory: {documents_directory}")
-    logging.info(f"Wrote keys to: {key_storage_path}")
+        json.dump(sorted_data, key_file)
 
 
 if __name__ == "__main__":
-    # Read the data directory, collection name, and persist directory
-    parser = argparse.ArgumentParser(
-        description="Parse ner keywords from text using spacy and grammar configuration files."
-    )
-
-    # Add arguments
-    parser.add_argument(
-        "--data-directory",
-        type=str,
-        default="./run_files/documents/skynet",
-        help="The directory where your text files are stored",
-    )
-
-    parser.add_argument(
-        "--collection-name",
-        type=str,
-        default="skynet",
-        help="The name of the Chroma collection",
-    )
-
-    parser.add_argument(
-        "--key-storage",
-        type=str,
-        default="./run_files/key_storage/",
-        help="The directory where you want to store the Chroma collection metadata keys",
-    )
-
-    parser.add_argument(
-        "--model",
-        type=str,
-        default="en_core_web_lg",
-        help="The spacy model to parse the text.",
-    )
-
-    parser.add_argument(
-        "--parse-config-directory",
-        type=str,
-        default="./run_files/parse_configs/",
-        help="The parse config directory",
-    )
-
-    parser.add_argument(
-        "--parse-config-file",
-        type=str,
-        default="ner_types.json",
-        help="The parse config file",
-    )
-
-    parser.add_argument(
-        "--chunk-size",
-        type=int,
-        default=524288,
-        help="The text chunk size for parsing.",
-    )
-
-    parser.add_argument(
-        "--chunk-overlap",
-        type=int,
-        default=0,
-        help="The overlap for text chunks for parsing",
-    )
-
-    # Parse arguments
-    args = parser.parse_args()
-
-    main(
-        documents_directory=args.data_directory,
-        collection_name=args.collection_name,
-        key_storage=args.key_storage,
-        model=args.model,
-        parse_config_directory=args.parse_config_directory,
-        parse_config_file=args.parse_config_file,
-        chunk_size=args.chunk_size,
-        chunk_overlap=args.chunk_overlap,
-    )
+    main()
